@@ -4,8 +4,12 @@ MAKEFLAGS += --no-builtin-variables
 CC = gcc
 
 CPPFLAGS = \
+	-I. \
         -m32 \
         -nostdinc
+
+# TODO Explain
+CPPFLAGS += -I$(shell $(CC) -print-file-name=include)
 
 CFLAGS = \
         -Wall -Wmissing-prototypes -Wstrict-prototypes \
