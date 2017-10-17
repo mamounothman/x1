@@ -1,19 +1,41 @@
+MAKEFLAGS += --no-builtin-rules
+MAKEFLAGS += --no-builtin-variables
+
 CC = gcc
+
+CPPFLAGS = \
+        -m32 \
+        -nostdinc
+
 CFLAGS = \
         -Wall -Wmissing-prototypes -Wstrict-prototypes \
-        -D _GNU_SOURCE -O2 -std=gnu11 -ggdb3 \
+        -O2 -std=gnu99 -g \
+        -ffreestanding \
         -fno-strict-aliasing
 
-BINARY = hello
-OBJECTS = main.o
+LDFLAGS = \
+        -m32 \
+        -static \
+        -nostdlib \
+        -Xlinker --build-id=none \
+        -Xlinker -T kernel.lds
+
+BINARY = x1
+SOURCES = boot.S main.c
+
+OBJECTS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SOURCES)))
+$(info $(OBJECTS))
 
 $(BINARY): $(OBJECTS)
-	$(CC) -o $@ $^ -lm
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+
+%.o: %.S
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 clean:
 	rm -f $(BINARY) $(OBJECTS)
 
-.PHONY: clean
+.PHONY: clean $(SOURCES)

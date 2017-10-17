@@ -1,9 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
+void _start(void);
 
-int
-main(void)
+void
+_start(void)
 {
-    printf("Hello, world!\n");
-    return EXIT_SUCCESS;
+    for (;;);
 }
