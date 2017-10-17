@@ -19,9 +19,11 @@
 .section .text, "ax"
 
 _start:
-  /* AT&T syntax, CMP, JMP, MOV */
   cmp $BOOT_HDR_CHECK, %eax
   jnz .
   mov $stack, %esp
   add $STACK_SIZE, %esp
   jmp main
+
+  /* Not reached */
+  jmp .

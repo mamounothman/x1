@@ -14,7 +14,7 @@ menuentry "X1" --class os {
 EOF
 grub-mkrescue -o $TMPDIR/grub.iso $CDROOT
 
-qemu-system-x86_64 \
+qemu-system-i386 \
           -enable-kvm \
           -ctrl-grab \
           -gdb tcp::1234 \
