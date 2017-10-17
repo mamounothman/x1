@@ -1,5 +1,8 @@
+#include <defs.h>
+
 /* TODO Refer to the multiboot specification */
 #define BOOT_HDR_MAGIC  0x1BADB002
+#define BOOT_HDR_CHECK  0x2BADB002
 #define BOOT_HDR_FLAGS  0x0
 
 /* TODO Explain allocatbl */
@@ -12,3 +15,13 @@
 .int BOOT_HDR_MAGIC
 .int BOOT_HDR_FLAGS
 .int -(BOOT_HDR_FLAGS + BOOT_HDR_MAGIC)
+
+.section .text, "ax"
+
+_start:
+  /* AT&T syntax, CMP, JMP, MOV */
+  cmp $BOOT_HDR_CHECK, %eax
+  jnz .
+  mov $stack, %esp
+  add $STACK_SIZE, %esp
+  jmp main

@@ -1,7 +1,10 @@
-void _start(void);
+#include <defs.h>
+#include <stdint.h>
+
+uint8_t stack[STACK_SIZE] __attribute__ ((aligned (4)));
 
 void
-_start(void)
+main(void)
 {
     for (;;);
 }
