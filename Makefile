@@ -25,7 +25,7 @@ LDFLAGS = \
         -Xlinker -T kernel.lds
 
 BINARY = x1
-SOURCES = boot.S main.c
+SOURCES = boot.S main.c io.S
 
 OBJECTS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SOURCES)))
 $(info $(OBJECTS))
