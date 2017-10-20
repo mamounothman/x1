@@ -16,10 +16,9 @@ grub-mkrescue -o $TMPDIR/grub.iso $CDROOT
 
 qemu-system-i386 \
           -enable-kvm \
-          -ctrl-grab \
           -gdb tcp::1234 \
           -m 64 \
-          -monitor stdio \
+          -nographic \
           -cdrom $TMPDIR/grub.iso \
           -boot d
 
