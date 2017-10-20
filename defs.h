@@ -21,5 +21,9 @@
  * SOFTWARE.
  */
 
-#define     STACK_SIZE  4096
+#ifndef _DEFS_H
+#define _DEFS_H
 
+#define STACK_SIZE 4096
+
+#define /* _DEFS_H */

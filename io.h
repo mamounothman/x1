@@ -21,6 +21,11 @@
  * SOFTWARE.
  */
 
+#ifndef _IO_H
+#define _IO_H
+
 #include <stdint.h>
 
 void io_write(uint16_t port, uint8_t byte);
+
+#endif /* _IO_H */
