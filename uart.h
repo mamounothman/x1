@@ -23,17 +23,6 @@
 
 #include <stdint.h>
 
-#include <defs.h>
-#include <io.h>
-#include <uart.h>
+void uart_init(void);
+void uart_write(uint8_t byte);
 
-uint8_t stack[STACK_SIZE] __attribute__ ((aligned (4)));
-
-void
-main(void)
-{
-    uart_init();
-    uart_write('H');
-
-    for (;;);
-}
