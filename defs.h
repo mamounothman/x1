@@ -26,4 +26,4 @@
 
 #define STACK_SIZE 4096
 
-#define /* _DEFS_H */
+#endif /* _DEFS_H */
