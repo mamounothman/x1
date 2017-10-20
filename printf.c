@@ -21,21 +21,30 @@
  * SOFTWARE.
  */
 
-#include <stdint.h>
+#include <stdarg.h>
 
-#include <defs.h>
-#include <io.h>
+#include <fmt.h>
 #include <printf.h>
 #include <uart.h>
 
-uint8_t stack[STACK_SIZE] __attribute__ ((aligned (4)));
+/* TODO Discuss stack vs static and size */
+#define PRINTF_BUFFER_SIZE 1024
 
-void
-main(void)
+static char printf_buffer[PRINTF_BUFFER_SIZE];
+
+int printf(const char *format, ...)
 {
-    uart_init();
+    va_list ap;
+    int length;
 
-    printf("X1 Hello, world !\n");
+    va_start(ap, format);
+    length = fmt_vsnprintf(printf_buffer, sizeof(printf_buffer), format, ap);
+    va_end(ap);
 
-    for (;;);
+    for (const char *ptr = printf_buffer; *ptr != '\0'; ptr++) {
+        /* TODO Discuss cast */
+        uart_write((uint8_t)*ptr);
+    }
+
+    return length;
 }

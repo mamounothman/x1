@@ -21,21 +21,11 @@
  * SOFTWARE.
  */
 
-#include <stdint.h>
+#ifndef _STRING_H
+#define _STRING_H
 
-#include <defs.h>
-#include <io.h>
-#include <printf.h>
-#include <uart.h>
+char * strcpy(char *dest, const char *src);
 
-uint8_t stack[STACK_SIZE] __attribute__ ((aligned (4)));
+size_t strlen(const char *s);
 
-void
-main(void)
-{
-    uart_init();
-
-    printf("X1 Hello, world !\n");
-
-    for (;;);
-}
+#endif /* _STRING_H */

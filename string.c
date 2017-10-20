@@ -21,21 +21,35 @@
  * SOFTWARE.
  */
 
-#include <stdint.h>
+#include <stddef.h>
 
-#include <defs.h>
-#include <io.h>
-#include <printf.h>
-#include <uart.h>
+#include <string.h>
 
-uint8_t stack[STACK_SIZE] __attribute__ ((aligned (4)));
-
-void
-main(void)
+char *
+strcpy(char *dest, const char *src)
 {
-    uart_init();
+    char *tmp;
 
-    printf("X1 Hello, world !\n");
+    tmp = dest;
 
-    for (;;);
+    while ((*dest = *src) != '\0') {
+        dest++;
+        src++;
+    }
+
+    return tmp;
+}
+
+size_t
+strlen(const char *s)
+{
+    const char *start;
+
+    start = s;
+
+    while (*s != '\0') {
+        s++;
+    }
+
+    return (s - start);
 }

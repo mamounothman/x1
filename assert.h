@@ -21,21 +21,28 @@
  * SOFTWARE.
  */
 
-#include <stdint.h>
+#ifndef _ASSERT_H
+#define _ASSERT_H
 
-#include <defs.h>
-#include <io.h>
+#ifdef NDEBUG
+#define assert(expression)
+#else /* NDEBUG */
+
+#include <macros.h>
 #include <printf.h>
-#include <uart.h>
 
-uint8_t stack[STACK_SIZE] __attribute__ ((aligned (4)));
+/*
+ * Panic if the given expression is false.
+ */
+#define assert(expression)                                          \
+MACRO_BEGIN                                                         \
+    if (unlikely(!(expression))) {                                  \
+        printf("assertion (%s) failed in %s:%d, function %s()\n",   \
+               __QUOTE(expression), __FILE__, __LINE__, __func__);  \
+        for (;;);                                                   \
+    }                                                               \
+MACRO_END
 
-void
-main(void)
-{
-    uart_init();
+#endif /* NDEBUG */
 
-    printf("X1 Hello, world !\n");
-
-    for (;;);
-}
+#endif /* _ASSERT_H */

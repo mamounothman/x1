@@ -21,21 +21,10 @@
  * SOFTWARE.
  */
 
-#include <stdint.h>
+#ifndef _PRINTF_H
+#define _PRINTF_H
 
-#include <defs.h>
-#include <io.h>
-#include <printf.h>
-#include <uart.h>
+int printf(const char *format, ...)
+    __attribute__((format(printf, 1, 2)));
 
-uint8_t stack[STACK_SIZE] __attribute__ ((aligned (4)));
-
-void
-main(void)
-{
-    uart_init();
-
-    printf("X1 Hello, world !\n");
-
-    for (;;);
-}
+#endif /* _PRINTF_H */

@@ -21,14 +21,21 @@ LDFLAGS = \
         -m32 \
         -static \
         -nostdlib \
+        -lgcc \
         -Xlinker --build-id=none \
         -Xlinker -T kernel.lds
 
 BINARY = x1
-SOURCES = boot.S main.c io.S uart.c
+SOURCES = \
+        boot.S \
+        fmt.c \
+        io.S \
+        main.c \
+        printf.c \
+        string.c \
+        uart.c
 
 OBJECTS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SOURCES)))
-$(info $(OBJECTS))
 
 $(BINARY): $(OBJECTS)
 	$(CC) -o $@ $^ $(LDFLAGS)
