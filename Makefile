@@ -28,6 +28,8 @@ LDFLAGS = \
 BINARY = x1
 SOURCES = \
         boot.S \
+        cpu.c \
+        cpu_asm.S \
         fmt.c \
         io.S \
         main.c \

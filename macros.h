@@ -71,6 +71,10 @@
 #define __noinline          __attribute__((noinline))
 #endif
 
+#ifndef __aligned
+#define __aligned(x)        __attribute__((aligned(x)))
+#endif
+
 #ifndef __always_inline
 #define __always_inline     inline __attribute__((always_inline))
 #endif

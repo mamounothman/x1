@@ -21,23 +21,49 @@
  * SOFTWARE.
  */
 
-#include <stdint.h>
-
 #include <cpu.h>
-#include <defs.h>
-#include <io.h>
-#include <printf.h>
-#include <uart.h>
 
-uint8_t stack[STACK_SIZE] __attribute__ ((aligned (4)));
+.section .text
+.code32
 
-void
-main(void)
-{
-    cpu_setup();
-    uart_init();
+.global cpu_get_eflags
+cpu_get_eflags:
+ pushf
+ pop %eax
+ ret
 
-    printf("X1 Hello, world !\n");
+.global cpu_intr_enable
+cpu_intr_enable:
+ sti
+ ret
 
-    for (;;);
-}
+.global cpu_intr_disable
+cpu_intr_disable:
+ cli
+ ret
+
+.global cpu_load_gdt
+cpu_load_gdt:
+ mov 4(%esp), %eax
+ lgdt (%eax)
+
+ mov $CPU_GDT_SEL_DATA, %eax
+ mov %eax, %ds
+ mov %eax, %es
+ mov %eax, %fs
+ mov %eax, %gs
+ mov %eax, %ss
+
+ ljmp $CPU_GDT_SEL_CODE, $1f
+
+1:
+ ret
+
+.global cpu_load_idt
+cpu_load_idt:
+ mov 4(%esp), %eax
+ lidt (%eax)
+
+ int $0x80
+
+ ret

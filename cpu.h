@@ -21,23 +21,54 @@
  * SOFTWARE.
  */
 
+#ifndef _CPU_H
+#define _CPU_H
+
+/*
+ * EFLAGS register flags.
+ */
+#define CPU_EFL_IF 0x200
+
+/*
+ * GDT segment descriptor indexes.
+ */
+#define CPU_GDT_SEL_NULL    0x00
+#define CPU_GDT_SEL_CODE    0x08
+#define CPU_GDT_SEL_DATA    0x10
+#define CPU_GDT_SIZE    3
+
+#ifndef __ASSEMBLER__
+
+#include <stdbool.h>
 #include <stdint.h>
 
-#include <cpu.h>
-#include <defs.h>
-#include <io.h>
-#include <printf.h>
-#include <uart.h>
+/*
+ * Return the content of the EFLAGS register.
+ */
+uint32_t cpu_get_eflags(void);
 
-uint8_t stack[STACK_SIZE] __attribute__ ((aligned (4)));
+/*
+ * Enable/disable interrupts.
+ */
+void cpu_intr_enable(void);
+void cpu_intr_disable(void);
 
-void
-main(void)
+/*
+ * Return true if interrupts are enabled.
+ *
+ * Implies a compiler barrier.
+ */
+static inline bool
+cpu_intr_enabled(void)
 {
-    cpu_setup();
-    uart_init();
+    uint32_t eflags;
 
-    printf("X1 Hello, world !\n");
-
-    for (;;);
+    eflags = cpu_get_eflags();
+    return eflags & CPU_EFL_IF;
 }
+
+void cpu_setup(void);
+
+#endif /* __ASSEMBLER__ */
+
+#endif /* _CPU_H */
