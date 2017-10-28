@@ -15,6 +15,7 @@ CFLAGS = \
         -Wall -Wmissing-prototypes -Wstrict-prototypes \
         -O2 -std=gnu99 -g \
         -ffreestanding \
+        -fno-stack-protector \
         -fno-strict-aliasing
 
 LDFLAGS = \
