@@ -18,7 +18,7 @@ grub-mkrescue -o $TMPDIR/grub.iso $CDROOT
 
 # Start the QEMU emulator with options doing the following :
 #  - GDB remote access on the local TCP port 1234
-#  - 64MiB of physical memory (RAM)
+#  - 64MB of physical memory (RAM)
 #  - No video device (automatically sets the first COM port as the console)
 #  - Boot from the generated cdrom image.
 #
