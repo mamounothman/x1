@@ -100,11 +100,11 @@ LDFLAGS += -Xlinker -T kernel.lds
 
 BINARY = x1
 SOURCES = \
-	boot.S \
+	boot_asm.S \
 	cpu.c \
 	cpu_asm.S \
 	fmt.c \
-	io.S \
+	io_asm.S \
 	main.c \
 	printf.c \
 	string.c \
