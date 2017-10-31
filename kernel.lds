@@ -30,10 +30,7 @@ SECTIONS
         *(.bss)
     } > RAM : data
 
-    /*
-     * XXX A global offset section is created because of linking with libgcc.
-     * Is it safe to discard it ?
-     */
+    /* TODO Explain */
     /DISCARD/ : {
         *(.eh_frame)
     }

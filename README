@@ -11,9 +11,9 @@ to the more modern ways.
 Building
 --------
 
-X1 expects a Unix-like environment, including make and a GCC or Clang
-compilation toolchain. It's been tested on a few Linux distributions such
-as Debian and Arch.
+X1 expects a Unix-like environment, including make and a GCC compilation
+toolchain. It's been tested on a few Linux distributions such as Debian
+and Arch.
 
 Building the kernel is done using the make command from the source root
 directory. The end result is a statically linked ELF [1] file named x1.
@@ -48,9 +48,17 @@ A simple way to run the kernel is to use the qemu.sh shell script, which
 creates a cdrom image including both the kernel and the GRUB boot loader.
 On Debian, the following packages are required :
 
- - qemu (the well known machine emulator)
- - grub2 (grub-pc for the legacy BIOS version)
- - xorriso (a tool used by grub-mkrescue to create cdrom images)
+ - qemu
+     The well known machine emulator.
+ - grub2 and grub-pc
+     The GRUB 2 boot loader for legacy BIOS machines.
+ - xorriso
+     A tool used by grub-mkrescue to create cdrom images.
+ - build-essential
+     Meta-package pulling the gcc and make packages, amon others.
+ - gcc-multilib
+     Multilib support for GCC, which provides the 32-bits static libgcc
+     library required to link the kernel on 64-bits machines.
 
 When QEMU is running, you may enter (and leave) its monitor prompt using
 the Ctrl-a c key sequence. The most useful monitor commands are :
@@ -87,7 +95,14 @@ even before starting playing with X1 :
  - The concept of an executable format, including partitioning the content into
    sections, such as code and data sections. See ELF [1].
  - The C programming language, including common extensions, such as controlling
-   alignment.
+   alignment. The source code conforms to C99 [6] with some GNU extensions.
+
+The two files reader should use as their entry points are :
+
+ - boot.S
+     The assembly source file containing the very first instructions.
+ - kernel.lds
+     The linker script used to control the link step.
 
 
 References
@@ -98,3 +113,4 @@ References
 [3] Intel combined manuals : https://software.intel.com/en-us/articles/intel-sdm
 [4] Multiboot specification : https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
 [5] OSDev website : http://wiki.osdev.org/
+[6] C99 specification : http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
