@@ -1,1 +1,100 @@
-Minimalist educational operating system
+X1 - A minimalist educational operating system
+==============================================
+
+X1 is a very small operating system meant to introduce students to low-level
+system programming. As a result, it focuses on clarity of explanation. It's
+not meant to demonstrate state-of-the-art methods and algorithms, but rather
+simple, naive ones that do the job, while providing pointers and references
+to the more modern ways.
+
+
+Building
+--------
+
+X1 expects a Unix-like environment, including make and a GCC or Clang
+compilation toolchain. It's been tested on a few Linux distributions such
+as Debian and Arch.
+
+Building the kernel is done using the make command from the source root
+directory. The end result is a statically linked ELF [1] file named x1.
+
+
+Examining the kernel binary
+---------------------------
+
+The kernel can be examined with standard GNU binutils tools [2]. Here are
+some common command line examples to obtain information directly from the
+kernel binary :
+
+ - objdump -d x1 | less
+     Disassemble the kernel machine code.
+ - readelf -aW x1 | less
+     Display ELF information, such as headers and sections.
+ - addr2line -e x1 0x1003f0
+     Convert an address into a source location.
+ - nm x1
+     List symbol names.
+
+
+Running
+-------
+
+X1 targets the x86 32-bits architecture only (i386) [3], and ignores some
+advanced features such as virtual memory and SMP. It is compliant with the
+original multiboot specification [4] and GRUB is the recommended boot loader.
+It only supports legacy BIOS systems (no EFI/UEFI).
+
+A simple way to run the kernel is to use the qemu.sh shell script, which
+creates a cdrom image including both the kernel and the GRUB boot loader.
+On Debian, the following packages are required :
+
+ - qemu (the well known machine emulator)
+ - grub2 (grub-pc for the legacy BIOS version)
+ - xorriso (a tool used by grub-mkrescue to create cdrom images)
+
+When QEMU is running, you may enter (and leave) its monitor prompt using
+the Ctrl-a c key sequence. The most useful monitor commands are :
+
+ - info registers
+     Print the content of all core registers.
+ - info pic
+     Print the state of the legacy PIC interrupt controller.
+
+If you're interested in the details, the following commands may be of interest :
+
+ - info mtree
+     Print the various emulated address spaces.
+ - info qtree
+     Print the emulated device tree.
+
+
+Getting started
+---------------
+
+Even a simple project like X1 requires broad knowledge, spanning from a basic
+understanding of processors, memory, assembly and compilation toolchains. The
+OSDev website [5] provides a good starting point to find information of decent
+quality. Beyond that, readers are encouraged to refer to actual reference
+documentation, and of course, search engines.
+
+Here is a non-exhaustive list of topics readers should hopefully develop their
+understanding of with this project, and are encouraged to briefly learn about
+even before starting playing with X1 :
+
+ - Processor architecture, including core registers, machine instructions
+   and accessing memory through loads and stores.
+ - Control of the link step through a linker script.
+ - The concept of an executable format, including partitioning the content into
+   sections, such as code and data sections. See ELF [1].
+ - The C programming language, including common extensions, such as controlling
+   alignment.
+
+
+References
+----------
+
+[1] ELF: http://refspecs.linuxbase.org/elf/elf.pdf
+[2] GNU binutils : http://sourceware.org/binutils/docs-2.29/
+[3] Intel combined manuals : https://software.intel.com/en-us/articles/intel-sdm
+[4] Multiboot specification : https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
+[5] OSDev website : http://wiki.osdev.org/
