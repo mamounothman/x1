@@ -1,10 +1,10 @@
 /*
  * This linker script is used to drive the link step of the kernel, by e.g.
  * forcing the linker to use specific addresses when allocating space for
- * the sections and symbols.
+ * sections and symbols.
  *
  * It assumes flat physical memory (RAM) starting at 0, of size 64MB,
- * of which only "upper memory", starting at 1MB.
+ * of which only "upper memory", starting at 1MB, is used.
  *
  * On x86, the first 1MB of physical memory is where legacy BIOS mappings
  * are mapped. Completely skip that region for convenience.

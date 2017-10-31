@@ -63,7 +63,4 @@ cpu_load_gdt:
 cpu_load_idt:
  mov 4(%esp), %eax
  lidt (%eax)
-
- int $0x80
-
  ret

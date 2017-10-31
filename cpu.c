@@ -173,11 +173,5 @@ void
 cpu_setup(void)
 {
     cpu_setup_gdt();
-
-    cpu_intr_enable();
-    printf("interrupts are %s\n", cpu_intr_enabled() ? "enabled" : "disabled");
-    cpu_intr_disable();
-    printf("interrupts are %s\n", cpu_intr_enabled() ? "enabled" : "disabled");
-
     cpu_setup_idt();
 }
