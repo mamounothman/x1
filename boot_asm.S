@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-#include <defs.h>
+#include <boot.h>
 
 /*
  * These are values used in the OS image header, as defined by the multiboot
@@ -85,8 +85,8 @@ _start:
   cmp $BOOT_HDR_CHECK, %eax     /* Compare EAX against the expected value */
   jnz .                         /* If not equal, jump to the current address.
                                    This is an infinite loop. */
-  mov $stack, %esp              /* Set up a stack */
-  add $STACK_SIZE, %esp         /* On x86, stacks grow downwards, so start
+  mov $boot_stack, %esp         /* Set up a stack */
+  add $BOOT_STACK_SIZE, %esp    /* On x86, stacks grow downwards, so start
                                    at the top */
   jmp main                      /* Jump to the C main function */
 

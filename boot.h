@@ -21,9 +21,10 @@
  * SOFTWARE.
  */
 
-#ifndef _DEFS_H
-#define _DEFS_H
+#ifndef _BOOT_H
+#define _BOOT_H
 
-#define STACK_SIZE 4096
+#define BOOT_STACK_SIZE 4096
 
-#endif /* _DEFS_H */
+#endif /* _BOOT_H */
+

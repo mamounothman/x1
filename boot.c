@@ -23,22 +23,7 @@
 
 #include <stdint.h>
 
-#include <cpu.h>
-#include <printf.h>
-#include <uart.h>
+#include <boot.h>
+#include <macros.h>
 
-/*
- * This function is the main entry point for C code. It's called from
- * assembly code in the boot module, very soon after control is passed
- * to the kernel.
- */
-void
-main(void)
-{
-    cpu_setup();
-    uart_init();
-
-    printf("X1 Hello, world !\n");
-
-    for (;;);
-}
+uint8_t boot_stack[BOOT_STACK_SIZE] __aligned(4);
