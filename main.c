@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include <cpu.h>
+#include <i8259.h>
 #include <printf.h>
 #include <uart.h>
 
@@ -36,6 +37,7 @@ void
 main(void)
 {
     cpu_setup();
+    i8259_setup();
     uart_init();
 
     printf("X1 Hello, world !\n");
