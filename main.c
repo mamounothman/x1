@@ -38,7 +38,7 @@ main(void)
 {
     cpu_setup();
     i8259_setup();
-    uart_init();
+    uart_setup();
 
     printf("X1 Hello, world !\n");
 

@@ -40,7 +40,8 @@
 #define UART_REG_DIVH   1
 #define UART_REG_LCR    3
 
-void uart_init(void)
+void
+uart_setup(void)
 {
     io_write(UART_COM1_PORT + UART_REG_LCR, UART_LCR_DLAB);
     io_write(UART_COM1_PORT + UART_REG_DIVL, UART_DIVISOR);
@@ -49,9 +50,8 @@ void uart_init(void)
                                             | UART_LCR_PARITY_NONE);
 }
 
-void uart_write(uint8_t byte)
+void
+uart_write(uint8_t byte)
 {
     io_write(UART_COM1_PORT + UART_REG_DAT, byte);
 }
-
-
