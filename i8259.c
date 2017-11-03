@@ -19,6 +19,22 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ *
+ * IRQ means Interrupt ReQuest. They're used by external hardware to signal
+ * the CPU, and in turn the OS, that an external event has happened and
+ * requires processing. The usual model is show in the image at
+ * https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/PIC_Hardware_interrupt_path.svg/300px-PIC_Hardware_interrupt_path.svg.png.
+ *
+ * This driver implements IRQ handling on the Intel 8259 PIC. The IBM PC/AT
+ * actually uses 2 of these PICs for external interrupt handling, as shown
+ * in https://masherz.files.wordpress.com/2010/08/217.jpg. The public
+ * interface completely hides this detail and considers all given IRQs
+ * as logical indexes, used to find the corresponding PIC (master or slave)
+ * and the local IRQ on that PIC.
+ *
+ * 8259 datasheet :
+ *   https://pdos.csail.mit.edu/6.828/2010/readings/hardware/8259A.pdf
  */
 
 #include <stddef.h>
@@ -31,41 +47,55 @@
 #include <io.h>
 #include <macros.h>
 
-#define I8259_IRQ_CASCADE   2
+#define I8259_IRQ_CASCADE   2        /* IRQ used for cascading on the master */
 #define I8259_NR_IRQS       8
 
-#define I8259_MASTER_CMD    0x20
-#define I8259_MASTER_DAT    0x21
-#define I8259_SLAVE_CMD     0xA0
-#define I8259_SLAVE_DAT     0xA1
+/*
+ * Initialization Control Word 1 bits.
+ */
+#define I8259_ICW1_ICW4     0x01    /* State that a 4th ICW will be sent */
+#define I8259_ICW1_INIT     0x10    /* This bit must be set */
 
-#define I8259_ICW1_ICW4     0x01
-#define I8259_ICW1_INIT     0x10
- 
-#define I8259_ICW4_8086     0x01
+/*
+ * Initialization Control Word 4 bits.
+ */
+#define I8259_ICW4_8086     0x01    /* 8086 mode, as x86 is still compatible
+                                       with the old 8086 processor */
 
-#define I8259_PIC_ID_MASTER 0
-#define I8259_PIC_ID_SLAVE  1
-#define I8259_NR_PICS       2
-
-struct i8259_pic {
-    uint16_t cmd_port;
-    uint16_t data_port;
-    uint8_t mask;
-    bool master;
+enum {
+    I8259_PIC_ID_MASTER,
+    I8259_PIC_ID_SLAVE,
+    I8259_NR_PICS
 };
 
+/*
+ * This structure is used as a class defining a PIC object.
+ *
+ * Using functions as methods, this allows using some of the patterns
+ * of object-oriented programming, such as encapsulation, to isolate
+ * and simplify problems, and make code easily reusable.
+ */
+struct i8259_pic {
+    uint16_t cmd_port;      /* Command I/O port of the PIC */
+    uint16_t data_port;     /* Data I/O port of the PIC */
+    uint8_t imr;            /* Cached value of the IMR register */
+    bool master;            /* True if this PIC is the master */
+};
+
+/*
+ * Static instances of PIC objects.
+ */
 static struct i8259_pic i8259_pics[] = {
     [I8259_PIC_ID_MASTER] = {
-        .cmd_port = I8259_MASTER_CMD,
-        .data_port = I8259_MASTER_DAT,
-        .mask = 0xff,
+        .cmd_port = 0x20,
+        .data_port = 0x21,
+        .imr = 0xff,
         .master = true,
     },
     [I8259_PIC_ID_SLAVE] = {
-        .cmd_port = I8259_SLAVE_CMD,
-        .data_port = I8259_SLAVE_DAT,
-        .mask = 0xff,
+        .cmd_port = 0xa0,
+        .data_port = 0xa1,
+        .imr = 0xff,
         .master = false,
     },
 };
@@ -85,6 +115,7 @@ i8259_get_pic_from_irq(unsigned int irq)
     } else if (irq < (I8259_NR_IRQS * I8259_NR_PICS)) {
         return i8259_get_pic(I8259_PIC_ID_SLAVE);
     }
+
     return NULL;
 }
 
@@ -101,9 +132,9 @@ i8259_pic_write_data(const struct i8259_pic *pic, uint8_t byte)
 }
 
 static void
-i8259_pic_apply_mask(const struct i8259_pic *pic)
+i8259_pic_apply_imr(const struct i8259_pic *pic)
 {
-    io_write(pic->data_port, pic->mask);
+    io_write(pic->data_port, pic->imr);
 }
 
 static void
@@ -116,8 +147,8 @@ i8259_pic_enable_irq(struct i8259_pic *pic, unsigned int irq)
 
     assert(irq < I8259_NR_IRQS);
 
-    pic->mask &= ~(1 << irq);
-    i8259_pic_apply_mask(pic);
+    pic->imr &= ~(1 << irq);
+    i8259_pic_apply_imr(pic);
 }
 
 static void
@@ -130,8 +161,8 @@ i8259_pic_disable_irq(struct i8259_pic *pic, unsigned int irq)
 
     assert(irq < I8259_NR_IRQS);
 
-    pic->mask |= (1 << irq);
-    i8259_pic_apply_mask(pic);
+    pic->imr |= (1 << irq);
+    i8259_pic_apply_imr(pic);
 }
 
 void
@@ -152,14 +183,14 @@ i8259_setup(void)
     i8259_pic_write_data(slave, I8259_ICW4_8086);
 
     i8259_pic_enable_irq(master, I8259_IRQ_CASCADE);
-    i8259_pic_apply_mask(master);
-    i8259_pic_apply_mask(slave);
+    i8259_pic_apply_imr(master);
+    i8259_pic_apply_imr(slave);
 }
 
 void i8259_irq_enable(unsigned int irq)
 {
     struct i8259_pic *pic;
-    
+
     pic = i8259_get_pic_from_irq(irq);
     assert(pic);
     i8259_pic_enable_irq(pic, irq);
@@ -168,9 +199,8 @@ void i8259_irq_enable(unsigned int irq)
 void i8259_irq_disable(unsigned int irq)
 {
     struct i8259_pic *pic;
-    
+
     pic = i8259_get_pic_from_irq(irq);
     assert(pic);
     i8259_pic_disable_irq(pic, irq);
 }
-
