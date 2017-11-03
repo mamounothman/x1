@@ -104,7 +104,7 @@ SOURCES = \
 	cpu.c \
 	cpu_asm.S \
 	fmt.c \
-    i8259.c \
+	i8259.c \
 	io_asm.S \
 	main.c \
 	printf.c \
