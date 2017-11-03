@@ -21,8 +21,6 @@
  * SOFTWARE.
  */
 
-#include <stdint.h>
-
 #include <cpu.h>
 #include <i8259.h>
 #include <printf.h>
