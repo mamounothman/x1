@@ -19,32 +19,13 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- *
- * Intel 8259 programmable interrupt controller (PIC) driver.
  */
 
-#ifndef _I8259_H
-#define _I8259_H
+#ifndef _ERROR_H
+#define _ERROR_H
 
-/*
- * Initialize the i8259 module.
- */
-void i8259_setup(void);
+enum {
+    ERROR_INVAL = 1,
+};
 
-/*
- * Enable an IRQ line on the PIC.
- */
-void i8259_irq_enable(unsigned int irq);
-
-/*
- * Disable an IRQ line on the PIC.
- */
-void i8259_irq_disable(unsigned int irq);
-
-/*
- * Report an end of interrupt.
- */
-void i8259_irq_eoi(unsigned int irq);
-
-#endif /* _I8259_H */
+#endif /* _ERROR_H */

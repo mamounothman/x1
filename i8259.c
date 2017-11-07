@@ -43,6 +43,7 @@
 
 #include <assert.h>
 #include <cpu.h>
+#include <error.h>
 #include <i8259.h>
 #include <io.h>
 #include <macros.h>
@@ -61,6 +62,8 @@
  */
 #define I8259_ICW4_8086     0x01    /* 8086 mode, as x86 is still compatible
                                        with the old 8086 processor */
+
+#define I8259_OCW2_EOI      0x20    /* End of interrupt control word */
 
 enum {
     I8259_PIC_ID_MASTER,
@@ -107,16 +110,25 @@ i8259_get_pic(unsigned int id)
     return &i8259_pics[id];
 }
 
-static struct i8259_pic *
-i8259_get_pic_from_irq(unsigned int irq)
+static int
+i8259_convert_global_irq(unsigned int irq, struct i8259_pic **pic,
+                         unsigned int *local_irq)
 {
+    int error;
+
     if (irq < I8259_NR_IRQS) {
-        return i8259_get_pic(I8259_PIC_ID_MASTER);
+        *pic = i8259_get_pic(I8259_PIC_ID_MASTER);
+        *local_irq = irq;
+        error = 0;
     } else if (irq < (I8259_NR_IRQS * I8259_NR_PICS)) {
-        return i8259_get_pic(I8259_PIC_ID_SLAVE);
+        *pic = i8259_get_pic(I8259_PIC_ID_SLAVE);
+        *local_irq = irq - I8259_NR_IRQS;
+        error = 0;
+    } else {
+        error = ERROR_INVAL;
     }
 
-    return NULL;
+    return error;
 }
 
 static void
@@ -140,11 +152,6 @@ i8259_pic_apply_imr(const struct i8259_pic *pic)
 static void
 i8259_pic_enable_irq(struct i8259_pic *pic, unsigned int irq)
 {
-    if (!pic->master) {
-        assert(irq >= I8259_NR_IRQS);
-        irq -= I8259_NR_IRQS;
-    }
-
     assert(irq < I8259_NR_IRQS);
 
     pic->imr &= ~(1 << irq);
@@ -154,15 +161,16 @@ i8259_pic_enable_irq(struct i8259_pic *pic, unsigned int irq)
 static void
 i8259_pic_disable_irq(struct i8259_pic *pic, unsigned int irq)
 {
-    if (!pic->master) {
-        assert(irq >= I8259_NR_IRQS);
-        irq -= I8259_NR_IRQS;
-    }
-
     assert(irq < I8259_NR_IRQS);
 
     pic->imr |= (1 << irq);
     i8259_pic_apply_imr(pic);
+}
+
+static void
+i8259_pic_eoi(struct i8259_pic *pic)
+{
+    io_write(pic->cmd_port, I8259_OCW2_EOI);
 }
 
 void
@@ -187,20 +195,44 @@ i8259_setup(void)
     i8259_pic_apply_imr(slave);
 }
 
-void i8259_irq_enable(unsigned int irq)
+void
+i8259_irq_enable(unsigned int irq)
 {
     struct i8259_pic *pic;
+    unsigned int local_irq;
+    int error;
 
-    pic = i8259_get_pic_from_irq(irq);
-    assert(pic);
-    i8259_pic_enable_irq(pic, irq);
+    error = i8259_convert_global_irq(irq, &pic, &local_irq);
+    assert(!error);
+    i8259_pic_enable_irq(pic, local_irq);
 }
 
-void i8259_irq_disable(unsigned int irq)
+void
+i8259_irq_disable(unsigned int irq)
 {
     struct i8259_pic *pic;
+    unsigned int local_irq;
+    int error;
 
-    pic = i8259_get_pic_from_irq(irq);
-    assert(pic);
-    i8259_pic_disable_irq(pic, irq);
+    error = i8259_convert_global_irq(irq, &pic, &local_irq);
+    assert(!error);
+    i8259_pic_disable_irq(pic, local_irq);
+}
+
+void
+i8259_irq_eoi(unsigned int irq)
+{
+    struct i8259_pic *pic;
+    unsigned int local_irq;
+    int error;
+
+    error = i8259_convert_global_irq(irq, &pic, &local_irq);
+    assert(!error);
+
+    if (!pic->master) {
+        /* TODO Explain why order doesn't matter */
+        i8259_pic_eoi(i8259_get_pic(I8259_PIC_ID_MASTER));
+    }
+
+    i8259_pic_eoi(pic);
 }
