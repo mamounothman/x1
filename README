@@ -99,7 +99,7 @@ even before starting playing with X1 :
 
 The two files reader should use as their entry points are :
 
- - boot.S
+ - boot_asm.S
      The assembly source file containing the very first instructions.
  - kernel.lds
      The linker script used to control the link step.
