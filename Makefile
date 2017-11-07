@@ -108,6 +108,7 @@ SOURCES = \
 	i8259.c \
 	io_asm.S \
 	main.c \
+	mem.c \
 	printf.c \
 	string.c \
 	uart.c

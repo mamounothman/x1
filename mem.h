@@ -21,26 +21,13 @@
  * SOFTWARE.
  */
 
-#include <cpu.h>
-#include <i8259.h>
-#include <mem.h>
-#include <printf.h>
-#include <uart.h>
+#ifndef _MEM_H
+#define _MEM_H
 
-/*
- * This function is the main entry point for C code. It's called from
- * assembly code in the boot module, very soon after control is passed
- * to the kernel.
- */
-void
-main(void)
-{
-    cpu_setup();
-    i8259_setup();
-    uart_setup();
-    mem_setup();
+#include <stddef.h>
 
-    printf("X1 Hello, world !\n");
+void mem_setup(void);
+void * mem_alloc(size_t size);
+void mem_free(void *ptr);
 
-    for (;;);
-}
+#endif /* _MEM_H */
