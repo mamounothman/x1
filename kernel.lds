@@ -13,6 +13,12 @@
  */
 
 /*
+ * Override the default entry point. This sets the address of the first
+ * instruction run when the boot loader passes control to the kernel.
+ */
+ENTRY(boot_start)
+
+/*
  * The memory command is used to describe regions of memory. Here, a single
  * region of RAM is defined. Adding another region, such as the video RAM
  * at 0xA0000, would allow other commands in this script to allocate symbols

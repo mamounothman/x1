@@ -70,8 +70,9 @@
 .section .text, "ax"
 
 /*
- * This symbol is the default entry point. The address of this symbol is
- * what the following command returns :
+ * This symbol is the entry point, i.e. the first instruction that should
+ * be run when control is passed to the kernel. The address of this symbol
+ * is what the following command returns :
  *   readelf -aW x1 | grep "Entry point"
  *
  * The .global directive tells the assembler to make the symbol global,
@@ -80,8 +81,8 @@
  * When this code is run, the machine state should comply with what the
  * multiboot specification defines.
  */
-.global _start
-_start:
+.global boot_start
+boot_start:
   cmp $BOOT_HDR_CHECK, %eax     /* Compare EAX against the expected value */
   jnz .                         /* If not equal, jump to the current address.
                                    This is an infinite loop. */
