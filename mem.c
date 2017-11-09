@@ -21,13 +21,14 @@
  * SOFTWARE.
  */
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 
 #include <list.h>
 #include <mem.h>
 
-#define MEM_HEAP_SIZE (32*1024*1024)
+#define MEM_HEAP_SIZE (32 * 1024 * 1024)
 
 struct mem_fheader {
     struct list node;
@@ -35,7 +36,7 @@ struct mem_fheader {
 
 struct mem_btag {
     size_t size;
-    bool free;
+    bool allocated;
 };
 
 struct mem_hbtag {
@@ -63,13 +64,37 @@ static void
 mem_btag_init(struct mem_btag *btag, size_t size)
 {
     btag->size = size;
-    btag->free = true;
+    btag->allocated = false;
+}
+
+static bool
+mem_btag_allocated(const struct mem_btag *btag)
+{
+    return btag->allocated;
+}
+
+static size_t
+mem_btag_size(const struct mem_btag *btag)
+{
+    return btag->size;
 }
 
 static void
 mem_hbtag_init(struct mem_hbtag *hbtag, size_t size)
 {
     mem_btag_init(&hbtag->btag, size);
+}
+
+static size_t
+mem_hbtag_size(const struct mem_hbtag *hbtag)
+{
+    return mem_btag_size(&hbtag->btag);
+}
+
+static bool
+mem_hbtag_allocated(const struct mem_hbtag *hbtag)
+{
+    return mem_btag_allocated(&hbtag->btag);
 }
 
 static void
@@ -81,7 +106,13 @@ mem_fbtag_init(struct mem_fbtag *fbtag, size_t size)
 static size_t
 mem_block_size(const struct mem_block *block)
 {
-    return block->hbtag.btag.size; /* TODO Refactor */
+    return mem_hbtag_size(&block->hbtag);
+}
+
+static bool
+mem_block_allocated(const struct mem_block *block)
+{
+    return mem_hbtag_allocated(&block->hbtag);
 }
 
 static struct mem_fbtag *
@@ -112,8 +143,13 @@ mem_block_header(struct mem_block *block)
 }
 
 static void
-mem_flist_add_header(struct mem_flist *list, struct mem_fheader *header)
+mem_flist_add(struct mem_flist *list, struct mem_block *block)
 {
+    struct mem_fheader *header;
+
+    assert(!mem_block_allocated(block));
+
+    header = mem_block_header(block);
     list_insert_tail(&list->headers, &header->node);
 }
 
@@ -131,7 +167,7 @@ mem_setup(void)
     block = (struct mem_block *)mem_heap;
     mem_block_init(block, sizeof(mem_heap));
     mem_flist_init(&mem_flist);
-    mem_flist_add_header(&mem_flist, mem_block_header(block));
+    mem_flist_add(&mem_flist, block);
 }
 
 void *
@@ -143,6 +179,5 @@ mem_alloc(size_t size)
 void
 mem_free(void *ptr)
 {
-
+    (void)ptr;
 }
-
