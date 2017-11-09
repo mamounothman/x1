@@ -37,11 +37,11 @@
  *   https://pdos.csail.mit.edu/6.828/2010/readings/hardware/8259A.pdf
  */
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <assert.h>
 #include <cpu.h>
 #include <error.h>
 #include <i8259.h>
