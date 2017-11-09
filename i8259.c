@@ -118,11 +118,19 @@ i8259_convert_global_irq(unsigned int irq, struct i8259_pic **pic,
 
     if (irq < I8259_NR_IRQS) {
         *pic = i8259_get_pic(I8259_PIC_ID_MASTER);
-        *local_irq = irq;
+
+        if (local_irq) {
+            *local_irq = irq;
+        }
+
         error = 0;
     } else if (irq < (I8259_NR_IRQS * I8259_NR_PICS)) {
         *pic = i8259_get_pic(I8259_PIC_ID_SLAVE);
-        *local_irq = irq - I8259_NR_IRQS;
+
+        if (local_irq) {
+            *local_irq = irq - I8259_NR_IRQS;
+        }
+
         error = 0;
     } else {
         error = ERROR_INVAL;
@@ -223,14 +231,27 @@ void
 i8259_irq_eoi(unsigned int irq)
 {
     struct i8259_pic *pic;
-    unsigned int local_irq;
     int error;
 
-    error = i8259_convert_global_irq(irq, &pic, &local_irq);
+    assert(!cpu_intr_enabled());
+
+    error = i8259_convert_global_irq(irq, &pic, NULL);
     assert(!error);
 
     if (!pic->master) {
-        /* TODO Explain why order doesn't matter */
+        /*
+         * The order in which EOI messages are sent (master then slave or the
+         * reverse) is irrelevant :
+         *  - If the slave is sent the EOI message first, it may raise another
+         *    interrupt right away, in which case it will be pending at the
+         *    master until the latter is sent the EOI message too.
+         *  - If the master is sent the EOI message first, it may raise another
+         *    interrupt right away, in which case it will be pending at the
+         *    processor until interrupts are reenabled, assuming that this
+         *    function is called with interrupts disabled, and that interrupts
+         *    remain disabled until control is returned to the interrupted
+         *    thread.
+         */
         i8259_pic_eoi(i8259_get_pic(I8259_PIC_ID_MASTER));
     }
 

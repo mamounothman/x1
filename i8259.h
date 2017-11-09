@@ -44,6 +44,8 @@ void i8259_irq_disable(unsigned int irq);
 
 /*
  * Report an end of interrupt.
+ *
+ * This function must be called with interrupts disabled.
  */
 void i8259_irq_eoi(unsigned int irq);
 
