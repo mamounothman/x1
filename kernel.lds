@@ -21,10 +21,10 @@ ENTRY(boot_start)
 /*
  * The memory command is used to describe regions of memory. Here, a single
  * region of RAM is defined. Adding another region, such as the video RAM
- * at 0xA0000, would allow other commands in this script to allocate symbols
+ * at 0xa0000, would allow other commands in this script to allocate symbols
  * out of that region.
  *
- * Describing memory regions is optional. It is best use when building for
+ * Describing memory regions is optional. It is best used when building for
  * known devices with a specific memory layout.
  */
 MEMORY
