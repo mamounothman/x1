@@ -270,7 +270,7 @@ mem_alloc(size_t size)
         mem_flist_add(&mem_flist, block2);
     }
 
-    return block;
+    return mem_block_payload(block);
 }
 
 void
