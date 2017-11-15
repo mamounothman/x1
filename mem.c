@@ -30,7 +30,7 @@
 
 #define MEM_HEAP_SIZE       (32 * 1024 * 1024)
 
-#define MEM_ALIGN 4
+#define MEM_ALIGN           4
 
 #define MEM_BLOCK_MIN_SIZE  P2ROUND((sizeof(struct mem_btag) \
                                     + sizeof(struct mem_fheader)), MEM_ALIGN)
@@ -42,11 +42,11 @@ struct mem_fheader {
 struct mem_btag {
     size_t size;
     bool allocated;
-    struct mem_fheader header[];
 };
 
 struct mem_block {
     struct mem_btag btag;
+    char payload[];
 };
 
 struct mem_flist {
@@ -61,7 +61,7 @@ mem_fheader_get_block(struct mem_fheader *header)
 {
     size_t offset;
 
-    offset = offsetof(struct mem_btag, header);
+    offset = offsetof(struct mem_block, payload);
     return (struct mem_block *)((char *)header - offset);
 }
 
@@ -94,12 +94,6 @@ static size_t
 mem_btag_size(const struct mem_btag *btag)
 {
     return btag->size;
-}
-
-static struct mem_fheader *
-mem_btag_header(struct mem_btag *btag)
-{
-    return btag->header;
 }
 
 static size_t
@@ -146,10 +140,17 @@ mem_block_init(struct mem_block *block, size_t size)
     mem_btag_init(&block->btag, size);
 }
 
+static void *
+mem_block_payload(struct mem_block *block)
+{
+    return block->payload;
+}
+
 static struct mem_fheader *
 mem_block_header(struct mem_block *block)
 {
-    return mem_btag_header(&block->btag);
+    assert(!mem_block_allocated(block));
+    return mem_block_payload(block);
 }
 
 static struct mem_block *
@@ -180,9 +181,9 @@ mem_flist_add(struct mem_flist *list, struct mem_block *block)
 
     assert(mem_block_allocated(block));
 
+    mem_block_clear_allocated(block);
     header = mem_block_header(block);
     list_insert_tail(&list->headers, &header->node);
-    mem_block_clear_allocated(block);
 }
 
 static void
@@ -263,7 +264,6 @@ mem_alloc(size_t size)
     }
 
     mem_flist_remove(&mem_flist, block);
-
     block2 = mem_block_split(block, size);
 
     if (block2 != NULL) {
