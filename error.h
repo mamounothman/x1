@@ -26,6 +26,7 @@
 
 enum {
     ERROR_INVAL = 1,
+    ERROR_AGAIN,
 };
 
 #endif /* _ERROR_H */
