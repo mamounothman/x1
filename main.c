@@ -42,5 +42,7 @@ main(void)
 
     printf("X1 Hello, world !\n");
 
-    for (;;);
+    cpu_intr_enable();
+
+    cpu_halt();
 }
