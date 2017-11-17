@@ -24,6 +24,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include <list.h>
 #include <mem.h>
@@ -32,7 +33,7 @@
 
 #define MEM_ALIGN           4
 
-#define MEM_BLOCK_MIN_SIZE  P2ROUND((sizeof(struct mem_btag) \
+#define MEM_BLOCK_MIN_SIZE  P2ROUND(((sizeof(struct mem_btag) * 2) \
                                     + sizeof(struct mem_fheader)), MEM_ALIGN)
 
 struct mem_fheader {
@@ -56,13 +57,10 @@ struct mem_flist {
 static char mem_heap[MEM_HEAP_SIZE] __aligned(MEM_ALIGN);
 static struct mem_flist mem_flist;
 
-static struct mem_block *
-mem_fheader_get_block(struct mem_fheader *header)
+static void *
+mem_heap_end(void)
 {
-    size_t offset;
-
-    offset = offsetof(struct mem_block, payload);
-    return (struct mem_block *)((char *)header - offset);
+    return &mem_heap[sizeof(mem_heap)];
 }
 
 static void
@@ -102,26 +100,17 @@ mem_block_size(const struct mem_block *block)
     return mem_btag_size(&block->btag);
 }
 
-static bool
-mem_block_allocated(const struct mem_block *block)
-{
-    return mem_btag_allocated(&block->btag);
-}
-
-static void
-mem_block_set_allocated(struct mem_block *block)
-{
-    mem_btag_set_allocated(&block->btag);
-}
-
-static void
-mem_block_clear_allocated(struct mem_block *block)
-{
-    mem_btag_clear_allocated(&block->btag);
-}
-
 static struct mem_block *
-mem_block_get_next(struct mem_block *block)
+mem_block_from_payload(void *payload)
+{
+    size_t offset;
+
+    offset = offsetof(struct mem_block, payload);
+    return (struct mem_block *)((char *)payload - offset);
+}
+
+static void *
+mem_block_end(const struct mem_block *block)
 {
     struct mem_block *next;
 
@@ -134,10 +123,71 @@ mem_block_get_next(struct mem_block *block)
     return next;
 }
 
+static struct mem_btag *
+mem_block_header_btag(struct mem_block *block)
+{
+    return &block->btag;
+}
+
+static struct mem_btag *
+mem_block_footer_btag(struct mem_block *block)
+{
+    struct mem_btag *btag;
+
+    btag = mem_block_end(block);
+    return &btag[-1];
+}
+
+static struct mem_block *
+mem_block_prev(struct mem_block *block)
+{
+    struct mem_btag *btag;
+
+    if ((char *)block == mem_heap) {
+        return NULL;
+    }
+
+    btag = mem_block_header_btag(block);
+    return (struct mem_block *)((char *)block - btag[-1].size);
+}
+
+static struct mem_block *
+mem_block_next(struct mem_block *block)
+{
+    block = mem_block_end(block);
+
+    if ((void *)block == mem_heap_end()) {
+        return NULL;
+    }
+
+    return block;
+}
+
+static bool
+mem_block_allocated(struct mem_block *block)
+{
+    return mem_btag_allocated(mem_block_header_btag(block));
+}
+
+static void
+mem_block_set_allocated(struct mem_block *block)
+{
+    mem_btag_set_allocated(mem_block_header_btag(block));
+    mem_btag_set_allocated(mem_block_footer_btag(block));
+}
+
+static void
+mem_block_clear_allocated(struct mem_block *block)
+{
+    mem_btag_clear_allocated(mem_block_header_btag(block));
+    mem_btag_clear_allocated(mem_block_footer_btag(block));
+}
+
 static void
 mem_block_init(struct mem_block *block, size_t size)
 {
-    mem_btag_init(&block->btag, size);
+    mem_btag_init(mem_block_header_btag(block), size);
+    mem_btag_init(mem_block_footer_btag(block), size);
 }
 
 static void *
@@ -153,25 +203,15 @@ mem_block_header(struct mem_block *block)
     return mem_block_payload(block);
 }
 
-static struct mem_block *
-mem_block_split(struct mem_block *block, size_t size)
+static bool
+mem_block_inside_heap(const struct mem_block *block)
 {
-    struct mem_block *block2;
-    size_t total_size;
+    void *heap_end;
 
-    assert(mem_block_allocated(block));
-    assert(P2ALIGNED(size, MEM_ALIGN));
-
-    if (mem_block_size(block) < (size + MEM_BLOCK_MIN_SIZE)) {
-        return NULL;
-    }
-
-    total_size = mem_block_size(block);
-    mem_block_init(block, size);
-    block2 = mem_block_get_next(block);
-    mem_block_init(block2, total_size - size);
-
-    return block2;
+    heap_end = mem_heap_end();
+    return (((char *)block >= mem_heap)
+            && ((void *)block->payload < heap_end)
+            && ((void *)mem_block_end(block) <= heap_end));
 }
 
 static void
@@ -183,7 +223,8 @@ mem_flist_add(struct mem_flist *list, struct mem_block *block)
 
     mem_block_clear_allocated(block);
     header = mem_block_header(block);
-    list_insert_tail(&list->headers, &header->node);
+    /* TODO Explain cache-hot data */
+    list_insert_head(&list->headers, &header->node);
 }
 
 static void
@@ -207,7 +248,7 @@ mem_flist_find(struct mem_flist *list, size_t size)
     struct mem_block *block;
 
     list_for_each_entry(&list->headers, header, node) {
-        block = mem_fheader_get_block(header);
+        block = mem_block_from_payload(header);
 
         if (mem_block_size(block) >= size) {
             return block;
@@ -221,6 +262,63 @@ static void
 mem_flist_init(struct mem_flist *list)
 {
     list_init(&list->headers);
+}
+
+static bool
+mem_block_inside(struct mem_block *block, void *addr)
+{
+    return (addr >= (void *)block) && (addr < mem_block_end(block));
+}
+
+static bool
+mem_block_overlap(struct mem_block *block1, struct mem_block *block2)
+{
+    return mem_block_inside(block1, block2)
+           || mem_block_inside(block2, block1);
+}
+
+static struct mem_block *
+mem_block_split(struct mem_block *block, size_t size)
+{
+    struct mem_block *block2;
+    size_t total_size;
+
+    assert(mem_block_allocated(block));
+    assert(P2ALIGNED(size, MEM_ALIGN));
+
+    if (mem_block_size(block) < (size + MEM_BLOCK_MIN_SIZE)) {
+        return NULL;
+    }
+
+    total_size = mem_block_size(block);
+    mem_block_init(block, size);
+    block2 = mem_block_end(block);
+    mem_block_init(block2, total_size - size);
+
+    return block2;
+}
+
+static void
+mem_block_merge(struct mem_block *block1, struct mem_block *block2)
+{
+    size_t size;
+
+    assert(!mem_block_overlap(block1, block2));
+
+    if (mem_block_allocated(block1) || mem_block_allocated(block2)) {
+        return;
+    }
+
+    mem_flist_remove(&mem_flist, block1);
+    mem_flist_remove(&mem_flist, block2);
+
+    if (block1 > block2) {
+        block1 = block2;
+    }
+
+    size = mem_block_size(block1) + mem_block_size(block2);
+    mem_block_init(block1, size);
+    mem_flist_add(&mem_flist, block1);
 }
 
 void
@@ -238,7 +336,7 @@ static size_t
 mem_convert_to_block_size(size_t size)
 {
     size = P2ROUND(size, MEM_ALIGN);
-    size += sizeof(struct mem_btag);
+    size += sizeof(struct mem_btag) * 2;
 
     if (size < MEM_BLOCK_MIN_SIZE) {
         size = MEM_BLOCK_MIN_SIZE;
@@ -276,5 +374,23 @@ mem_alloc(size_t size)
 void
 mem_free(void *ptr)
 {
-    (void)ptr;
+    struct mem_block *block, *tmp;
+
+    block = mem_block_from_payload(ptr);
+    assert(mem_block_inside_heap(block));
+
+    mem_flist_add(&mem_flist, block);
+
+    tmp = mem_block_prev(block);
+
+    if (tmp) {
+        mem_block_merge(block, tmp);
+        block = tmp;
+    }
+
+    tmp = mem_block_next(block);
+
+    if (tmp) {
+        mem_block_merge(block, tmp);
+    }
 }
