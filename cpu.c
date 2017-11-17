@@ -116,7 +116,7 @@ cpu_seg_desc_init_intr_gate(struct cpu_seg_desc *desc,
                 | (((uint32_t)handler) & 0xffff);
     desc->high = (((uint32_t)handler) & 0xffff0000)
                  | CPU_SEG_P
-                 | 0xf00;
+                 | 0xe00;
 }
 
 static void
