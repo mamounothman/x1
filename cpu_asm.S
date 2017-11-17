@@ -42,6 +42,11 @@ cpu_intr_disable:
  cli
  ret
 
+.global cpu_idle
+cpu_idle:
+ hlt
+ ret
+
 .global cpu_load_gdt
 cpu_load_gdt:
  mov 4(%esp), %eax
@@ -64,3 +69,40 @@ cpu_load_idt:
  mov 4(%esp), %eax
  lidt (%eax)
  ret
+
+#define CPU_INTR(vector, name)          \
+.global name;                           \
+name:                                   \
+ pushl $0;                              \
+ pushl $(vector);                       \
+ jmp cpu_intr_common
+
+#define CPU_INTR_ERROR(vector, name)    \
+.global name;                           \
+name:                                   \
+ pushl $(vector);                       \
+ jmp cpu_intr_common
+
+cpu_intr_common:
+ call cpu_intr_main
+ add $8, %esp               /* skip vector and error */
+ iret
+
+CPU_INTR_ERROR(CPU_IDT_VECT_GP, cpu_isr_general_protection)
+
+CPU_INTR(32, cpu_isr_32)
+CPU_INTR(33, cpu_isr_33)
+CPU_INTR(34, cpu_isr_34)
+CPU_INTR(35, cpu_isr_35)
+CPU_INTR(36, cpu_isr_36)
+CPU_INTR(37, cpu_isr_37)
+CPU_INTR(38, cpu_isr_38)
+CPU_INTR(39, cpu_isr_39)
+CPU_INTR(40, cpu_isr_40)
+CPU_INTR(41, cpu_isr_41)
+CPU_INTR(42, cpu_isr_42)
+CPU_INTR(43, cpu_isr_43)
+CPU_INTR(44, cpu_isr_44)
+CPU_INTR(45, cpu_isr_45)
+CPU_INTR(46, cpu_isr_46)
+CPU_INTR(47, cpu_isr_47)

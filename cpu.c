@@ -22,9 +22,12 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include <cpu.h>
+#include <error.h>
 #include <macros.h>
 #include <printf.h>
 
@@ -50,6 +53,10 @@ struct cpu_pseudo_desc {
     uint32_t base;
 } __packed;
 
+struct cpu_intr_handler {
+    cpu_intr_handler_fn_t fn;
+};
+
 /*
  * TODO Reference alignment recommendation.
  */
@@ -57,14 +64,55 @@ static struct cpu_seg_desc cpu_gdt[CPU_GDT_SIZE] __aligned(8);
 
 static struct cpu_seg_desc cpu_idt[CPU_IDT_SIZE] __aligned(8);
 
+static struct cpu_intr_handler cpu_intr_handlers[16]; /* TODO Macros */
+
 void cpu_load_gdt(const struct cpu_pseudo_desc *desc);
 void cpu_load_idt(const struct cpu_pseudo_desc *desc);
+void cpu_intr_main(uint32_t vector);
+
+/*
+ * Low level interrupt service routines.
+ */
+void cpu_isr_general_protection(void);
+void cpu_isr_32(void);
+void cpu_isr_33(void);
+void cpu_isr_34(void);
+void cpu_isr_35(void);
+void cpu_isr_36(void);
+void cpu_isr_37(void);
+void cpu_isr_38(void);
+void cpu_isr_39(void);
+void cpu_isr_40(void);
+void cpu_isr_41(void);
+void cpu_isr_42(void);
+void cpu_isr_43(void);
+void cpu_isr_44(void);
+void cpu_isr_45(void);
+void cpu_isr_46(void);
+void cpu_isr_47(void);
+
+bool
+cpu_intr_enabled(void)
+{
+    uint32_t eflags;
+
+    eflags = cpu_get_eflags();
+    return eflags & CPU_EFL_IF;
+}
+
+void
+cpu_halt(void)
+{
+    for (;;) {
+        cpu_idle();
+    }
+}
 
 static void
 cpu_default_intr_handler(void)
 {
-    printf("interrupt!\n");
-    for (;;);
+    printf("cpu: error: unhandled interrupt\n");
+    cpu_halt();
 }
 
 static void
@@ -144,6 +192,31 @@ cpu_get_gdt_entry(size_t selector)
 }
 
 static void
+cpu_intr_handler_init(struct cpu_intr_handler *handler)
+{
+    handler->fn = NULL;
+}
+
+static struct cpu_intr_handler *
+cpu_lookup_intr_handler(unsigned int irq)
+{
+    assert(irq < ARRAY_SIZE(cpu_intr_handlers));
+    return &cpu_intr_handlers[irq];
+}
+
+static int
+cpu_intr_handler_set_fn(struct cpu_intr_handler *handler,
+                        cpu_intr_handler_fn_t fn)
+{
+    if (handler->fn != NULL) {
+        return ERROR_AGAIN;
+    }
+
+    handler->fn = fn;
+    return 0;
+}
+
+static void
 cpu_setup_gdt(void)
 {
     struct cpu_pseudo_desc pseudo_desc;
@@ -161,12 +234,61 @@ cpu_setup_idt(void)
 {
     struct cpu_pseudo_desc pseudo_desc;
 
+    for (size_t i = 0; i < ARRAY_SIZE(cpu_intr_handlers); i++) {
+        cpu_intr_handler_init(cpu_lookup_intr_handler(i));
+    }
+
     for (size_t i = 0; i < ARRAY_SIZE(cpu_idt); i++) {
         cpu_seg_desc_init_intr_gate(&cpu_idt[i], cpu_default_intr_handler);
     }
 
+    cpu_seg_desc_init_intr_gate(&cpu_idt[CPU_IDT_VECT_GP],
+                                cpu_isr_general_protection);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[32], cpu_isr_32);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[33], cpu_isr_33);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[34], cpu_isr_34);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[35], cpu_isr_35);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[36], cpu_isr_36);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[37], cpu_isr_37);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[38], cpu_isr_38);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[39], cpu_isr_39);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[40], cpu_isr_40);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[41], cpu_isr_41);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[42], cpu_isr_42);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[43], cpu_isr_43);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[44], cpu_isr_44);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[45], cpu_isr_45);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[46], cpu_isr_46);
+    cpu_seg_desc_init_intr_gate(&cpu_idt[47], cpu_isr_47);
+
     cpu_pseudo_desc_init(&pseudo_desc, cpu_idt, sizeof(cpu_idt));
     cpu_load_idt(&pseudo_desc);
+}
+
+void
+cpu_intr_main(uint32_t vector)
+{
+    struct cpu_intr_handler *handler;
+
+    assert(!cpu_intr_enabled());
+
+    handler = cpu_lookup_intr_handler(vector - 32); /* TODO Macros */
+
+    if (!handler || !handler->fn) {
+        printf("cpu: error: invalid handler for vector %u\n", vector);
+        return;
+    }
+
+    handler->fn();
+}
+
+int
+cpu_intr_register(unsigned int irq, cpu_intr_handler_fn_t handler_fn)
+{
+    struct cpu_intr_handler *handler;
+
+    handler = cpu_lookup_intr_handler(irq);
+    return cpu_intr_handler_set_fn(handler, handler_fn);
 }
 
 void

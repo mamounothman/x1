@@ -35,12 +35,13 @@
 #define CPU_GDT_SEL_NULL    0x00
 #define CPU_GDT_SEL_CODE    0x08
 #define CPU_GDT_SEL_DATA    0x10
-#define CPU_GDT_SIZE    3
+#define CPU_GDT_SIZE        3
 
 /*
  * IDT segment descriptor indexes.
  * Exception and interrupt vectors.
  */
+#define CPU_IDT_VECT_GP             13
 #define CPU_IDT_VECT_PIC_MASTER     32
 #define CPU_IDT_VECT_PIC_SLAVE      (CPU_IDT_VECT_PIC_MASTER + 8)
 
@@ -48,6 +49,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
+typedef void (*cpu_intr_handler_fn_t)(void);
 
 /*
  * Return the content of the EFLAGS register.
@@ -65,14 +68,13 @@ void cpu_intr_disable(void);
  *
  * Implies a compiler barrier.
  */
-static inline bool
-cpu_intr_enabled(void)
-{
-    uint32_t eflags;
+bool cpu_intr_enabled(void);
 
-    eflags = cpu_get_eflags();
-    return eflags & CPU_EFL_IF;
-}
+void cpu_idle(void);
+
+void cpu_halt(void);
+
+int cpu_intr_register(unsigned int irq, cpu_intr_handler_fn_t handler_fn);
 
 void cpu_setup(void);
 
