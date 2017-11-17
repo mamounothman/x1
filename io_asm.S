@@ -24,6 +24,12 @@
 .section .text
 .code32
 
+.global io_read
+io_read:
+ mov 4(%esp), %edx
+ in %dx, %al
+ ret
+
 .global io_write
 io_write:
  mov 8(%esp), %eax
