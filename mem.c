@@ -312,11 +312,12 @@ mem_block_merge(struct mem_block *block1, struct mem_block *block2)
     mem_flist_remove(&mem_flist, block1);
     mem_flist_remove(&mem_flist, block2);
 
+    size = mem_block_size(block1) + mem_block_size(block2);
+
     if (block1 > block2) {
         block1 = block2;
     }
 
-    size = mem_block_size(block1) + mem_block_size(block2);
     mem_block_init(block1, size);
     mem_flist_add(&mem_flist, block1);
 }
