@@ -22,7 +22,9 @@
  */
 
 #include <stdarg.h>
+#include <stdint.h>
 
+#include <cpu.h>
 #include <fmt.h>
 #include <printf.h>
 #include <uart.h>
@@ -34,8 +36,11 @@ static char printf_buffer[PRINTF_BUFFER_SIZE];
 
 int printf(const char *format, ...)
 {
+    uint32_t eflags;
     va_list ap;
     int length;
+
+    eflags = cpu_intr_save();
 
     va_start(ap, format);
     length = fmt_vsnprintf(printf_buffer, sizeof(printf_buffer), format, ap);
@@ -45,6 +50,8 @@ int printf(const char *format, ...)
         /* TODO Discuss cast */
         uart_write((uint8_t)*ptr);
     }
+
+    cpu_intr_restore(eflags);
 
     return length;
 }
