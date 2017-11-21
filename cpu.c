@@ -55,6 +55,7 @@ struct cpu_pseudo_desc {
 
 struct cpu_intr_handler {
     cpu_intr_handler_fn_t fn;
+    void *arg;
 };
 
 /*
@@ -206,13 +207,14 @@ cpu_lookup_intr_handler(unsigned int irq)
 
 static int
 cpu_intr_handler_set_fn(struct cpu_intr_handler *handler,
-                        cpu_intr_handler_fn_t fn)
+                        cpu_intr_handler_fn_t fn, void *arg)
 {
     if (handler->fn != NULL) {
         return ERROR_AGAIN;
     }
 
     handler->fn = fn;
+    handler->arg = arg;
     return 0;
 }
 
@@ -279,16 +281,16 @@ cpu_intr_main(uint32_t vector)
         return;
     }
 
-    handler->fn();
+    handler->fn(handler->arg);
 }
 
 int
-cpu_intr_register(unsigned int irq, cpu_intr_handler_fn_t handler_fn)
+cpu_intr_register(unsigned int irq, cpu_intr_handler_fn_t fn, void *arg)
 {
     struct cpu_intr_handler *handler;
 
     handler = cpu_lookup_intr_handler(irq);
-    return cpu_intr_handler_set_fn(handler, handler_fn);
+    return cpu_intr_handler_set_fn(handler, fn, arg);
 }
 
 void
