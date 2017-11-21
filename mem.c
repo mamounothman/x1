@@ -249,6 +249,12 @@ static char mem_heap[MEM_HEAP_SIZE] __aligned(MEM_ALIGN);
  */
 static struct mem_free_list mem_free_list;
 
+static bool
+mem_aligned(size_t value)
+{
+    return P2ALIGNED(value, MEM_ALIGN);
+}
+
 static void *
 mem_heap_end(void)
 {
@@ -535,7 +541,7 @@ mem_block_split(struct mem_block *block, size_t size)
     size_t total_size;
 
     assert(mem_block_allocated(block));
-    assert(P2ALIGNED(size, MEM_ALIGN));
+    assert(mem_aligned(size));
 
     if (mem_block_size(block) < (size + MEM_BLOCK_MIN_SIZE)) {
         return NULL;
@@ -626,7 +632,7 @@ mem_alloc(size_t size)
     }
 
     ptr = mem_block_payload(block);
-    assert(P2ALIGNED((uintptr_t)ptr, MEM_ALIGN));
+    assert(mem_aligned((uintptr_t)ptr));
     return ptr;
 }
 
@@ -639,7 +645,7 @@ mem_free(void *ptr)
         return;
     }
 
-    assert(P2ALIGNED((uintptr_t)ptr, MEM_ALIGN));
+    assert(mem_aligned((uintptr_t)ptr));
 
     block = mem_block_from_payload(ptr);
     assert(mem_block_inside_heap(block));
