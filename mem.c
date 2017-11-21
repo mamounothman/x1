@@ -177,17 +177,20 @@
 #endif
 
 /*
+ * Masks applied on boundary tags to extract the size and the allocation flag.
+ */
+#define MEM_BTAG_ALLOCATED_MASK ((size_t)0x1)
+#define MEM_BTAG_SIZE_MASK      (~MEM_BTAG_ALLOCATED_MASK)
+
+/*
  * Boundary tag.
  *
  * Since the alignment constraint specified for mem_alloc() applies to
  * payloads, not blocks, it's important that boundary tags also be aligned.
  * This is a check that would best be performed with C11 static assertions.
- *
- * TODO Make both the size and the allocation flag fit in a single word.
  */
 struct mem_btag {
-    size_t size;
-    bool allocated;
+    size_t value;
 };
 
 /*
@@ -252,35 +255,35 @@ mem_heap_end(void)
     return &mem_heap[sizeof(mem_heap)];
 }
 
-static void
-mem_btag_init(struct mem_btag *btag, size_t size)
-{
-    btag->size = size;
-    btag->allocated = true;
-}
-
 static bool
 mem_btag_allocated(const struct mem_btag *btag)
 {
-    return btag->allocated;
+    return btag->value & MEM_BTAG_ALLOCATED_MASK;
 }
 
 static void
 mem_btag_set_allocated(struct mem_btag *btag)
 {
-    btag->allocated = true;
+    btag->value |= MEM_BTAG_ALLOCATED_MASK;
 }
 
 static void
 mem_btag_clear_allocated(struct mem_btag *btag)
 {
-    btag->allocated = false;
+    btag->value &= ~MEM_BTAG_ALLOCATED_MASK;
 }
 
 static size_t
 mem_btag_size(const struct mem_btag *btag)
 {
-    return btag->size;
+    return btag->value & MEM_BTAG_SIZE_MASK;
+}
+
+static void
+mem_btag_init(struct mem_btag *btag, size_t size)
+{
+    btag->value = size;
+    mem_btag_set_allocated(btag);
 }
 
 static size_t
@@ -374,7 +377,7 @@ mem_block_prev(struct mem_block *block)
     }
 
     btag = mem_block_header_btag(block);
-    return (struct mem_block *)((char *)block - btag[-1].size);
+    return (struct mem_block *)((char *)block - mem_btag_size(&btag[-1]));
 }
 
 static struct mem_block *
