@@ -21,7 +21,13 @@
  * SOFTWARE.
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <cpu.h>
+#include <i8259.h>
 #include <io.h>
+#include <printf.h>
 #include <uart.h>
 
 #define UART_BAUD_RATE          115200
@@ -29,16 +35,39 @@
 #define UART_CLOCK              115200
 #define UART_DIVISOR            (UART_CLOCK / UART_BAUD_RATE)
 
+#define UART_IRQ                4
+
+#define UART_IER_DATA           0x1
+
 #define UART_LCR_8BITS          0x3
 #define UART_LCR_STOP1          0
 #define UART_LCR_PARITY_NONE    0
 #define UART_LCR_DLAB           0x80
 
-#define UART_COM1_PORT  0x3F8
-#define UART_REG_DAT    0
-#define UART_REG_DIVL   0
-#define UART_REG_DIVH   1
-#define UART_REG_LCR    3
+#define UART_COM1_PORT          0x3F8
+#define UART_REG_DAT            0
+#define UART_REG_DIVL           0
+#define UART_REG_IER            1
+#define UART_REG_DIVH           1
+#define UART_REG_LCR            3
+
+static void
+uart_intr_handler(void *arg)
+{
+    uint8_t byte;
+
+    (void)arg;
+
+    i8259_irq_eoi(UART_IRQ);
+
+    byte = io_read(UART_COM1_PORT + UART_REG_DAT);
+
+    printf("%c", byte);
+
+    if (byte == '\r') {
+        printf("\n");
+    }
+}
 
 void
 uart_setup(void)
@@ -48,6 +77,11 @@ uart_setup(void)
     io_write(UART_COM1_PORT + UART_REG_DIVH, UART_DIVISOR >> 8);
     io_write(UART_COM1_PORT + UART_REG_LCR, UART_LCR_8BITS | UART_LCR_STOP1
                                             | UART_LCR_PARITY_NONE);
+
+    /* TODO Explain order */
+    cpu_intr_register(UART_IRQ, uart_intr_handler, NULL);
+    i8259_irq_enable(UART_IRQ);
+    io_write(UART_COM1_PORT + UART_REG_IER, UART_IER_DATA);
 }
 
 void
