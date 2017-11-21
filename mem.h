@@ -50,7 +50,11 @@ void mem_setup(void);
  *    type size. Since this code targets the 32-bits i386 architecture, the
  *    largest built-in type is unsigned int, resulting in addresses aligned
  *    to 4 bytes boundaries. Here, "built-in" means natively supported by
- *    the processor.
+ *    the processor. The document that defines the size of built-in types
+ *    is the ABI (Application Binary Interface) specification, in this case
+ *    System V Intel386 ABI [1] (see the GCC -mabi option for x86). The ABI
+ *    normally uses one of the most common data models [2] for C types, in
+ *    this case ILP32 (for int/long/pointers 32-bits).
  *
  * This last detail is important because C specifies the alignment of both
  * built-in and aggregate types. In particular, the alignment of structure
@@ -69,6 +73,9 @@ void mem_setup(void);
  *
  * On other architectures, unaligned accesses may simply not be supported,
  * and generate exceptions.
+ *
+ * [1] http://www.sco.com/developers/devspecs/abi386-4.pdf
+ * [2] http://www.unix.org/version2/whatsnew/lp64_wp.html
  */
 void * mem_alloc(size_t size);
 

@@ -94,7 +94,7 @@
  * the size of a boundary tag is fixed, the address of the whole block
  * can easily be computed. In order to reduce fragmentation, i.e. a state
  * where all free blocks are small and prevent allocating bigger blocks,
- * the allocator attempts to merge neighbour free blocks. Obtaining the
+ * the allocator attempts to merge neighbor free blocks. Obtaining the
  * address of the next block is easily achieved by simply adding the size
  * of the current block, stored in the boundary tag, to the address of
  * the block. But without a footer boundary tag, finding the address of
@@ -114,7 +114,7 @@
  *
  * Pointers
  * --------
- * The code in this module makes extensive use of pointer arithmetics and
+ * The code in this module makes extensive use of pointer arithmetic and
  * conversion between pointer types. It's important to keep in mind that,
  * in C, the void pointer is meant as a generic reference to objects of
  * any type. As a result, any pointer can be assigned to a void pointer
@@ -133,6 +133,14 @@
 
 /*
  * Total size of the backing storage heap.
+ *
+ * Note that the resulting kernel image file remains much smaller than this.
+ * The reason is because the heap is defined as uninitialized data, which are
+ * allocated out of the bss section by default. The bss section is filled
+ * with zeroes when the kernel image is loaded by the boot loader, as
+ * mandated by the ELF specification, which means there is no need to store
+ * the heap data, or any other statically allocated uninitialized data, in
+ * the kernel image file.
  */
 #define MEM_HEAP_SIZE       (32 * 1024 * 1024)
 
@@ -187,7 +195,7 @@ struct mem_btag {
  *
  * Note the use of a C99 flexible array member. This construction enables
  * the implementation to directly access the payload without pointer
- * arithmetics or casting, and is one of the preferred ways to deal with
+ * arithmetic or casting, and is one of the preferred ways to deal with
  * headers.
  */
 struct mem_block {
@@ -234,7 +242,7 @@ static char mem_heap[MEM_HEAP_SIZE] __aligned(MEM_ALIGN);
  *
  * In order to improve allocation speed, multiple lists may be used, each
  * for a specific size range. Such lists are called segregated free lists
- * and enabled more allocation policies, such as instant-fit.
+ * and enable more allocation policies, such as instant-fit.
  */
 static struct mem_free_list mem_free_list;
 
@@ -293,7 +301,7 @@ mem_block_from_payload(void *payload)
     offset = offsetof(struct mem_block, payload);
 
     /*
-     * Always keep pointer arithmetics in mind !
+     * Always keep pointer arithmetic in mind !
      *
      * The rule is fairly simple : whenever arithmetic operators are used
      * on pointers, the operator is scaled on the type size, so that e.g.
@@ -308,9 +316,9 @@ mem_block_from_payload(void *payload)
      * is specifically meant for this as C99 mandates that sizeof(char) be 1
      * (6.5.3.4 The sizeof operator).
      *
-     * As a side note, a GNU extension allows using pointer arithmetics on
+     * As a side note, a GNU extension allows using pointer arithmetic on
      * void pointers, where the "size of void" is 1, turning pointer
-     * arithmetics on void pointers into byte arithmetics, allowing this
+     * arithmetic on void pointers into byte arithmetic, allowing this
      * expression to be written as :
      *
      * return payload - offset;
@@ -451,7 +459,7 @@ mem_free_list_add(struct mem_free_list *list, struct mem_block *block)
      * before it was freed, there is a good chance that (part of) its memory
      * is still in the processor cache, potentially increasing the chances
      * of cache hits and saving a few expensive accesses from the processor
-     * to memory. This is an exemple of inexpensive micro-optimization.
+     * to memory. This is an example of inexpensive micro-optimization.
      */
     list_insert_head(&list->free_nodes, &free_node->node);
 }
@@ -476,6 +484,17 @@ mem_free_list_find(struct mem_free_list *list, size_t size)
     struct mem_free_node *free_node;
     struct mem_block *block;
 
+    /*
+     * The algorithmic complexity of this operation is O(n) [1] which
+     * basically means the maximum number of steps, and time, for the
+     * operation to complete depend on the number of elements in the list.
+     * This is one of the main reasons why memory allocation is generally
+     * avoided in interrupt handlers and real-time applications. Special
+     * allocators with guaranteed constant time or a fixed and known worst
+     * case time, may be used in these cases.
+     *
+     * [1] https://en.wikipedia.org/wiki/Big_O_notation
+     */
     list_for_each_entry(&list->free_nodes, free_node, node) {
         block = mem_block_from_payload(free_node);
 
