@@ -188,6 +188,9 @@
  * Since the alignment constraint specified for mem_alloc() applies to
  * payloads, not blocks, it's important that boundary tags also be aligned.
  * This is a check that would best be performed with C11 static assertions.
+ *
+ * In addition, the alignment constraint implies that the least significant
+ * bit is always 0. Therefore, this bit is used to store the allocation flag.
  */
 struct mem_btag {
     size_t value;
