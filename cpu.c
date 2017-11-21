@@ -92,6 +92,22 @@ void cpu_isr_45(void);
 void cpu_isr_46(void);
 void cpu_isr_47(void);
 
+uint32_t
+cpu_intr_save(void)
+{
+    uint32_t eflags;
+
+    eflags = cpu_get_eflags();
+    cpu_intr_disable();
+    return eflags;
+}
+
+void
+cpu_intr_restore(uint32_t eflags)
+{
+    cpu_set_eflags(eflags);
+}
+
 bool
 cpu_intr_enabled(void)
 {

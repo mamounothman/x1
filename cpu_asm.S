@@ -32,6 +32,13 @@ cpu_get_eflags:
  pop %eax
  ret
 
+.global cpu_set_eflags
+cpu_set_eflags:
+ mov 4(%esp), %eax
+ push %eax
+ popf
+ ret
+
 .global cpu_intr_enable
 cpu_intr_enable:
  sti

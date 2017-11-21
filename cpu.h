@@ -53,15 +53,22 @@
 typedef void (*cpu_intr_handler_fn_t)(void *arg);
 
 /*
- * Return the content of the EFLAGS register.
+ * Get/set the content of the EFLAGS register.
  */
 uint32_t cpu_get_eflags(void);
+void cpu_set_eflags(uint32_t eflags);
 
 /*
  * Enable/disable interrupts.
  */
 void cpu_intr_enable(void);
 void cpu_intr_disable(void);
+
+/*
+ * Disable/restore interrupts.
+ */
+uint32_t cpu_intr_save(void);
+void cpu_intr_restore(uint32_t eflags);
 
 /*
  * Return true if interrupts are enabled.
