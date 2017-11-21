@@ -377,6 +377,10 @@ mem_free(void *ptr)
 {
     struct mem_block *block, *tmp;
 
+    if (!ptr) {
+        return;
+    }
+
     block = mem_block_from_payload(ptr);
     assert(mem_block_inside_heap(block));
 
