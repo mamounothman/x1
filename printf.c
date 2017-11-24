@@ -34,17 +34,28 @@
 
 static char printf_buffer[PRINTF_BUFFER_SIZE];
 
-int printf(const char *format, ...)
+int
+printf(const char *format, ...)
+{
+    va_list ap;
+    int length;
+
+    va_start(ap, format);
+    length = vprintf(format, ap);
+    va_end(ap);
+
+    return length;
+}
+
+int
+vprintf(const char *format, va_list ap)
 {
     uint32_t eflags;
-    va_list ap;
     int length;
 
     eflags = cpu_intr_save();
 
-    va_start(ap, format);
     length = fmt_vsnprintf(printf_buffer, sizeof(printf_buffer), format, ap);
-    va_end(ap);
 
     for (const char *ptr = printf_buffer; *ptr != '\0'; ptr++) {
         /* TODO Discuss cast */
