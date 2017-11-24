@@ -566,7 +566,7 @@ mem_block_merge(struct mem_block *block1, struct mem_block *block2)
     assert(!mem_block_overlap(block1, block2));
 
     if (mem_block_allocated(block1) || mem_block_allocated(block2)) {
-        return block1;
+        return NULL;
     }
 
     mem_free_list_remove(&mem_free_list, block1);
@@ -659,7 +659,11 @@ mem_free(void *ptr)
     tmp = mem_block_prev(block);
 
     if (tmp) {
-        block = mem_block_merge(block, tmp);
+        tmp = mem_block_merge(block, tmp);
+
+        if (tmp) {
+            block = tmp;
+        }
     }
 
     tmp = mem_block_next(block);
