@@ -21,8 +21,8 @@
  * SOFTWARE.
  */
 
-#ifndef _IO_H
-#define _IO_H
+#ifndef _PANIC_H
+#define _PANIC_H
 
 #include <macros.h>
 
@@ -30,4 +30,4 @@ void panic(const char *format, ...)
     __attribute__((noreturn))
     __attribute__((format(printf, 1, 2)));
 
-#endif /* _IO_H */
+#endif /* _PANIC_H */
