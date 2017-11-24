@@ -29,7 +29,7 @@
 #else /* NDEBUG */
 
 #include <macros.h>
-#include <printf.h>
+#include <panic.h>
 
 /*
  * Panic if the given expression is false.
@@ -37,9 +37,8 @@
 #define assert(expression)                                          \
 MACRO_BEGIN                                                         \
     if (unlikely(!(expression))) {                                  \
-        printf("assertion (%s) failed in %s:%d, function %s()\n",   \
-               __QUOTE(expression), __FILE__, __LINE__, __func__);  \
-        for (;;);                                                   \
+        panic("assertion (%s) failed in %s:%d, function %s()",      \
+              __QUOTE(expression), __FILE__, __LINE__, __func__);   \
     }                                                               \
 MACRO_END
 
