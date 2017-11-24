@@ -129,6 +129,7 @@ i8259_convert_global_irq(unsigned int irq, struct i8259_pic **pic,
 
         error = 0;
     } else {
+        *local_irq = 0;
         error = ERROR_INVAL;
     }
 
