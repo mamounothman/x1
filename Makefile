@@ -48,6 +48,9 @@ CFLAGS += -O2
 # source locations.
 CFLAGS += -g
 
+# Define this macro in order to turn off assertions.
+#CFLAGS += -DNDEBUG
+
 # Target a free standing environment as defined by C99.
 #
 # This option tells the compiler that it may not assume a hosted environment,
