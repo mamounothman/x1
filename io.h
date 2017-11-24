@@ -19,6 +19,15 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ *
+ * I/O ports access.
+ *
+ * The x86 architecture is special in that, in addition to the physical memory
+ * address space, it also has an I/O port space. Most modern processors use
+ * the physical memory address space to access memory-mapped device memory and
+ * registers, and that's also the case on x86, but the I/O port space is also
+ * used for this purpose, at least for some legacy devices.
  */
 
 #ifndef _IO_H
@@ -26,7 +35,14 @@
 
 #include <stdint.h>
 
+/*
+ * Read a byte from an I/O port.
+ */
 uint8_t io_read(uint16_t port);
+
+/*
+ * Write a byte to an I/O port.
+ */
 void io_write(uint16_t port, uint8_t byte);
 
 #endif /* _IO_H */
