@@ -92,12 +92,6 @@ LDFLAGS += -static
 # work, at least not without (usually heavy) integration work.
 LDFLAGS += -nostdlib
 
-# Link against libgcc. This library is a companion to the compiler and
-# adds support for operations required by C99 but that the hardware
-# doesn't provide. An example is 64-bits integer additions on a 32-bits
-# processor or a 64-bits processor running in 32-bits protected mode.
-LDFLAGS += -lgcc
-
 # Disable the generation of a build ID, a feature usually enabled by default
 # on many distributions. A build ID is linked in its own special section, so
 # disabling it makes the linker script simpler.
@@ -105,6 +99,12 @@ LDFLAGS += -Xlinker --build-id=none
 
 # Pass the linker script path to the linker.
 LDFLAGS += -Xlinker -T kernel.lds
+
+# Link against libgcc. This library is a companion to the compiler and
+# adds support for operations required by C99 but that the hardware
+# doesn't provide. An example is 64-bits integer additions on a 32-bits
+# processor or a 64-bits processor running in 32-bits protected mode.
+LIBS = -lgcc
 
 BINARY = x1
 SOURCES = \
@@ -125,7 +125,7 @@ SOURCES = \
 OBJECTS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SOURCES)))
 
 $(BINARY): $(OBJECTS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
