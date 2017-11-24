@@ -79,7 +79,7 @@ bool cpu_intr_enabled(void);
 
 void cpu_idle(void);
 
-void cpu_halt(void);
+void cpu_halt(void) __attribute__((noreturn));
 
 int cpu_intr_register(unsigned int irq, cpu_intr_handler_fn_t fn, void *arg);
 
