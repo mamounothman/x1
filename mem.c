@@ -316,7 +316,7 @@ mem_block_from_payload(void *payload)
      * Always keep pointer arithmetic in mind !
      *
      * The rule is fairly simple : whenever arithmetic operators are used
-     * on pointers, the operator is scaled on the type size, so that e.g.
+     * on pointers, the operation is scaled on the type size, so that e.g.
      * adding 1 means pointing to the next element. A good way to remember
      * this is to remember that pointers can be used as arrays, so that
      * both these expressions are equivalent :
