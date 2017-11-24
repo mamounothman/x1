@@ -109,6 +109,7 @@ SOURCES = \
 	io_asm.S \
 	main.c \
 	mem.c \
+	panic.c \
 	printf.c \
 	string.c \
 	uart.c
