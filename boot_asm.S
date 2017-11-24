@@ -91,5 +91,6 @@ boot_start:
                                    at the top */
   jmp main                      /* Jump to the C main function */
 
-  /* Not reached, set a loop for safety */
-  jmp .
+loop:
+  hlt                           /* Never reached, for safety */
+  jmp loop

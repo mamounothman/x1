@@ -21,13 +21,17 @@
  * SOFTWARE.
  */
 
-#ifndef _ERROR_H
-#define _ERROR_H
+.section .text
+.code32
 
-enum {
-    ERROR_INVAL = 1,
-    ERROR_AGAIN,
-    ERROR_NOMEM,
-};
-
-#endif /* _ERROR_H */
+/*
+ * stack layout :
+ *
+ * stack_size +--------+
+ *         -4 | arg    |
+ *         -8 | fn     |
+ *            +--------
+ */
+.global thread_load
+thread_load:
+  call thread_main

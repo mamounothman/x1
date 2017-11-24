@@ -21,13 +21,35 @@
  * SOFTWARE.
  */
 
-#ifndef _ERROR_H
-#define _ERROR_H
+#ifndef _THREAD_H
+#define _THREAD_H
 
-enum {
-    ERROR_INVAL = 1,
-    ERROR_AGAIN,
-    ERROR_NOMEM,
-};
+#include <stdbool.h>
+#include <stddef.h>
 
-#endif /* _ERROR_H */
+#define THREAD_NAME_MAX_SIZE 16
+
+typedef void (*thread_fn_t)(void *arg);
+
+struct thread;
+
+void thread_setup(void);
+
+int thread_create(struct thread **threadp, thread_fn_t fn, void *arg,
+                  const char *name, size_t stack_size);
+void thread_join(struct thread *thread);
+
+struct thread * thread_self(void);
+const char * thread_name(const struct thread *thread);
+
+void thread_yield(void);
+void thread_sleep(struct thread *thread);
+void thread_wakeup(struct thread *thread);
+
+void thread_preempt_enable(void);
+void thread_preempt_disable(void);
+bool thread_preempt_enabled(void);
+
+void thread_enable_scheduler(void) __attribute__((noreturn));
+
+#endif /* _THREAD_H */
