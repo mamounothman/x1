@@ -558,7 +558,7 @@ mem_block_split(struct mem_block *block, size_t size)
     return block2;
 }
 
-static void
+static struct mem_block *
 mem_block_merge(struct mem_block *block1, struct mem_block *block2)
 {
     size_t size;
@@ -566,7 +566,7 @@ mem_block_merge(struct mem_block *block1, struct mem_block *block2)
     assert(!mem_block_overlap(block1, block2));
 
     if (mem_block_allocated(block1) || mem_block_allocated(block2)) {
-        return;
+        return block1;
     }
 
     mem_free_list_remove(&mem_free_list, block1);
@@ -579,6 +579,7 @@ mem_block_merge(struct mem_block *block1, struct mem_block *block2)
 
     mem_block_init(block1, size);
     mem_free_list_add(&mem_free_list, block1);
+    return block1;
 }
 
 void
@@ -658,8 +659,7 @@ mem_free(void *ptr)
     tmp = mem_block_prev(block);
 
     if (tmp) {
-        mem_block_merge(block, tmp);
-        block = tmp;
+        block = mem_block_merge(block, tmp);
     }
 
     tmp = mem_block_next(block);
