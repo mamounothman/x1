@@ -1,24 +1,5 @@
 #!/bin/sh
 
-# Safely create a temporary directory.
-TMPDIR=$(mktemp -d)
-CDROOT=$TMPDIR/cdroot
-
-# Build a cdrom image with both the GRUB boot loader and the kernel binary.
-mkdir -p $CDROOT/boot/grub
-cp x1 $CDROOT/boot
-cat > $CDROOT/boot/grub/grub.cfg << EOF
-set timeout=1
-serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1
-terminal_input --append serial
-terminal_output --append serial
-
-menuentry "X1" --class os {
-        multiboot (hd96)/boot/x1
-}
-EOF
-grub-mkrescue -o $TMPDIR/grub.iso $CDROOT
-
 # Start the QEMU emulator with options doing the following :
 #  - GDB remote access on the local TCP port 1234
 #  - 64MB of physical memory (RAM)
@@ -35,7 +16,4 @@ qemu-system-i386 \
         -gdb tcp::1234 \
         -m 64 \
         -nographic \
-        -cdrom $TMPDIR/grub.iso \
-        -boot d
-
-rm -rf $TMPDIR
+        -kernel x1

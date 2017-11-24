@@ -17,7 +17,13 @@ and Arch.
 
 Building the kernel is done using the make command from the source root
 directory. The end result is a statically linked ELF [1] file named x1.
+On Debian, the following packages are required :
 
+ - build-essential
+     Meta-package pulling the gcc and make packages, among others.
+ - gcc-multilib
+     Multilib support for GCC, which provides the 32-bits static libgcc
+     library required to link the kernel on 64-bits machines.
 
 Examining the kernel binary
 ---------------------------
@@ -45,20 +51,11 @@ original multiboot specification [4] and GRUB is the recommended boot loader.
 It only supports legacy BIOS systems (no EFI/UEFI).
 
 A simple way to run the kernel is to use the qemu.sh shell script, which
-creates a cdrom image including both the kernel and the GRUB boot loader.
+relies on the QEMU -kernel option to act as a multiboot boot loader.
 On Debian, the following packages are required :
 
  - qemu
      The well known machine emulator.
- - grub2 and grub-pc
-     The GRUB 2 boot loader for legacy BIOS machines.
- - xorriso
-     A tool used by grub-mkrescue to create cdrom images.
- - build-essential
-     Meta-package pulling the gcc and make packages, amon others.
- - gcc-multilib
-     Multilib support for GCC, which provides the 32-bits static libgcc
-     library required to link the kernel on 64-bits machines.
 
 When QEMU is running, you may enter (and leave) its monitor prompt using
 the Ctrl-a c key sequence. The most useful monitor commands are :
