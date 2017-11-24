@@ -70,6 +70,11 @@ CFLAGS += -fno-stack-protector
 # when casting pointers.
 CFLAGS += -fno-strict-aliasing
 
+# Force all uninitialized global variables into a data section instead of
+# generating them as "common blocks". If multiple definitions of the same
+# global variable are made, this option will make the link fail.
+CFLAGS += -fno-common
+
 # Linker flags.
 #
 # These are also GCC options, so use man gcc for more details. On Debian,
