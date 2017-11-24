@@ -72,11 +72,7 @@ enum {
 };
 
 /*
- * This structure is used as a class defining a PIC object.
- *
- * Using functions as methods, this allows using some of the patterns
- * of object-oriented programming, such as encapsulation, to isolate
- * and simplify problems, and make code easily reusable.
+ * Intel 8259 programmable interrupt controller.
  */
 struct i8259_pic {
     uint16_t cmd_port;      /* Command I/O port of the PIC */
