@@ -24,8 +24,24 @@
 #include <cpu.h>
 #include <i8259.h>
 #include <mem.h>
+#include <panic.h>
 #include <printf.h>
+#include <thread.h>
 #include <uart.h>
+
+static void
+test(void *arg)
+{
+    struct thread *thread;
+
+    thread = arg;
+
+    if (thread != thread_self()) {
+        panic("test: error: invalid thread pointer");
+    }
+
+    printf("test: name: %s\n", thread_name(thread));
+}
 
 /*
  * This function is the main entry point for C code. It's called from
@@ -35,14 +51,22 @@
 void
 main(void)
 {
+    struct thread *thread;
+    int error;
+
     cpu_setup();
     i8259_setup();
     uart_setup();
     mem_setup();
+    thread_setup();
 
-    printf("X1 Hello, world !\n");
+    error = thread_create(&thread, test, thread, "test", 1024);
 
-    cpu_intr_enable();
+    if (error) {
+        panic("main: error: unable to create test thread");
+    }
 
-    cpu_halt();
+    thread_enable_scheduler();
+
+    /* Never reached */
 }

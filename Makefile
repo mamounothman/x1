@@ -120,6 +120,8 @@ SOURCES = \
 	panic.c \
 	printf.c \
 	string.c \
+	thread_asm.S \
+	thread.c \
 	uart.c
 
 OBJECTS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SOURCES)))
