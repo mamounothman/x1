@@ -23,7 +23,7 @@
  *
  * IRQ means Interrupt ReQuest. They're used by external hardware to signal
  * the CPU, and in turn the OS, that an external event has happened and
- * requires processing. The usual model is show in the image at
+ * requires processing. The usual model is shown in the image at
  * https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/PIC_Hardware_interrupt_path.svg/300px-PIC_Hardware_interrupt_path.svg.png.
  *
  * This driver implements IRQ handling on the Intel 8259 PIC. The IBM PC/AT
