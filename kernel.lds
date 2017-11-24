@@ -72,7 +72,9 @@ PHDRS
  *      in the ELF file, and in this case, the boot loader initializes the
  *      memory for the .bss section.
  *
- * Here, an additional section is used to store the multiboot header.
+ * Here, an additional section is used to store the multiboot header, and
+ * any section for read-only data produced by the compiler is forced into
+ * the .data section.
  *
  * Sections are allocated out of the RAM memory region, and mapped to heir
  * corresponding program headers segment.
@@ -87,10 +89,11 @@ SECTIONS
     } > RAM : hdr
 
     .text : {
-        *(.text)
+        *(.text*)
     } > RAM : text
 
     .data : {
+        *(.rodata*)
         *(.data)
     } > RAM : data
 
