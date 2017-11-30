@@ -84,7 +84,7 @@
 .global boot_start
 boot_start:
   cmp $BOOT_HDR_CHECK, %eax     /* Compare EAX against the expected value */
-  jnz .                         /* If not equal, jump to the current address.
+  jne .                         /* If not equal, jump to the current address.
                                    This is an infinite loop. */
   mov $boot_stack, %esp         /* Set up a stack */
   add $BOOT_STACK_SIZE, %esp    /* On x86, stacks grow downwards, so start
