@@ -33,6 +33,7 @@ typedef void (*thread_fn_t)(void *arg);
 
 struct thread;
 
+void thread_bootstrap(void);
 void thread_setup(void);
 
 int thread_create(struct thread **threadp, thread_fn_t fn, void *arg,

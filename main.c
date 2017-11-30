@@ -34,13 +34,14 @@ test(void *arg)
 {
     struct thread *thread;
 
-    thread = arg;
+    (void)arg;
 
-    if (thread != thread_self()) {
-        panic("test: error: invalid thread pointer");
+    thread = thread_self();
+
+    for (;;) {
+        printf("test: name: %s\n", thread_name(thread));
+        thread_yield();
     }
-
-    printf("test: name: %s\n", thread_name(thread));
 }
 
 /*
@@ -54,16 +55,23 @@ main(void)
     struct thread *thread;
     int error;
 
+    thread_bootstrap();
     cpu_setup();
     i8259_setup();
     uart_setup();
     mem_setup();
     thread_setup();
 
-    error = thread_create(&thread, test, thread, "test", 1024);
+    error = thread_create(&thread, test, NULL, "test1", 1024);
 
     if (error) {
-        panic("main: error: unable to create test thread");
+        panic("main: error: unable to create test1 thread");
+    }
+
+    error = thread_create(&thread, test, NULL, "test2", 1024);
+
+    if (error) {
+        panic("main: error: unable to create test2 thread");
     }
 
     thread_enable_scheduler();

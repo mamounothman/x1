@@ -24,14 +24,35 @@
 .section .text
 .code32
 
-/*
- * stack layout :
- *
- * stack_size +--------+
- *         -4 | arg    |
- *         -8 | fn     |
- *            +--------
- */
-.global thread_load
-thread_load:
+.global thread_load_context
+thread_load_context:
+  mov 4(%esp), %eax             /* Load the thread address */
+  mov (%eax), %esp              /* Switch to the thread stack */
+  jmp thread_restore_context
+
+.global thread_start
+thread_start:
   call thread_main
+
+.global thread_switch_context
+thread_switch_context:
+  mov 4(%esp), %eax             /* Get prev thread address */
+  mov 8(%esp), %ecx             /* Get next thread address */
+
+  push %ebp                     /* Save registers owned by the caller */
+  push %ebx
+  push %edi
+  push %esi
+  pushf
+
+  mov %esp, (%eax)              /* Save prev thread stack pointer */
+  mov (%ecx), %esp              /* Switch to the stack of the next thread */
+
+thread_restore_context:
+  popf                          /* Restore registers owned by the caller */
+  pop %esi
+  pop %edi
+  pop %ebx
+  pop %ebp
+
+  ret

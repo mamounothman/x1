@@ -27,7 +27,8 @@
 /*
  * EFLAGS register flags.
  */
-#define CPU_EFL_IF 0x200
+#define CPU_EFL_ONE     0x002
+#define CPU_EFL_IF      0x200
 
 /*
  * GDT segment descriptor indexes.

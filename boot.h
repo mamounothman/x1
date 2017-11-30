@@ -27,4 +27,3 @@
 #define BOOT_STACK_SIZE 4096
 
 #endif /* _BOOT_H */
-
