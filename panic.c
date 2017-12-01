@@ -26,12 +26,14 @@
 #include <cpu.h>
 #include <panic.h>
 #include <printf.h>
+#include <thread.h>
 
 void
 panic(const char *format, ...)
 {
     va_list ap;
 
+    thread_preempt_disable();
     cpu_intr_disable();
     printf("\npanic: ");
     va_start(ap, format);

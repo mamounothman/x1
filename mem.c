@@ -130,6 +130,7 @@
 #include <list.h>
 #include <macros.h>
 #include <mem.h>
+#include <thread.h>
 
 /*
  * Total size of the backing storage heap.
@@ -622,9 +623,13 @@ mem_alloc(size_t size)
     }
 
     size = mem_convert_to_block_size(size);
+
+    thread_preempt_disable();
+
     block = mem_free_list_find(&mem_free_list, size);
 
     if (block == NULL) {
+        thread_preempt_enable();
         return NULL;
     }
 
@@ -634,6 +639,8 @@ mem_alloc(size_t size)
     if (block2 != NULL) {
         mem_free_list_add(&mem_free_list, block2);
     }
+
+    thread_preempt_enable();
 
     ptr = mem_block_payload(block);
     assert(mem_aligned((uintptr_t)ptr));
@@ -654,6 +661,8 @@ mem_free(void *ptr)
     block = mem_block_from_payload(ptr);
     assert(mem_block_inside_heap(block));
 
+    thread_preempt_disable();
+
     mem_free_list_add(&mem_free_list, block);
 
     tmp = mem_block_prev(block);
@@ -671,4 +680,6 @@ mem_free(void *ptr)
     if (tmp) {
         mem_block_merge(block, tmp);
     }
+
+    thread_preempt_enable();
 }

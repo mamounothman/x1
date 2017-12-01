@@ -27,6 +27,7 @@
 #include <cpu.h>
 #include <fmt.h>
 #include <printf.h>
+#include <thread.h>
 #include <uart.h>
 
 /* TODO Discuss stack vs static and size */
@@ -53,6 +54,7 @@ vprintf(const char *format, va_list ap)
     uint32_t eflags;
     int length;
 
+    thread_preempt_disable();
     eflags = cpu_intr_save();
 
     length = fmt_vsnprintf(printf_buffer, sizeof(printf_buffer), format, ap);
@@ -63,6 +65,7 @@ vprintf(const char *format, va_list ap)
     }
 
     cpu_intr_restore(eflags);
+    thread_preempt_enable();
 
     return length;
 }

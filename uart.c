@@ -21,6 +21,7 @@
  * SOFTWARE.
  */
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -29,6 +30,7 @@
 #include <io.h>
 #include <printf.h>
 #include <uart.h>
+#include <thread.h>
 
 #define UART_BAUD_RATE          115200
 
@@ -87,5 +89,8 @@ uart_setup(void)
 void
 uart_write(uint8_t byte)
 {
+    assert(!cpu_intr_enabled());
+    assert(!thread_preempt_enabled());
+
     io_write(UART_COM1_PORT + UART_REG_DAT, byte);
 }
