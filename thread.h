@@ -44,7 +44,7 @@ struct thread * thread_self(void);
 const char * thread_name(const struct thread *thread);
 
 void thread_yield(void);
-void thread_sleep(struct thread *thread);
+void thread_sleep(void);
 void thread_wakeup(struct thread *thread);
 
 void thread_preempt_enable(void);

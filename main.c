@@ -21,6 +21,8 @@
  * SOFTWARE.
  */
 
+#include <stdbool.h>
+
 #include <cpu.h>
 #include <i8259.h>
 #include <mem.h>
@@ -29,18 +31,55 @@
 #include <thread.h>
 #include <uart.h>
 
-static void
-test(void *arg)
-{
-    struct thread *thread;
+static struct thread *thread1;
+static struct thread *thread2;
 
+static bool thread1_awaken;
+static bool thread2_awaken;
+
+static void
+test1(void *arg)
+{
     (void)arg;
 
-    thread = thread_self();
-    printf("test: name: %s\n", thread_name(thread));
+    thread_preempt_disable();
+
+    thread1_awaken = true;
 
     for (;;) {
-        thread_yield();
+        if (thread2) {
+            printf("waking_2 ");
+            thread2_awaken = true;
+            thread_wakeup(thread2);
+
+            thread1_awaken = false;
+
+            do {
+                thread_sleep();
+            } while (!thread1_awaken);
+        }
+    }
+}
+
+static void
+test2(void *arg)
+{
+    (void)arg;
+
+    thread_preempt_disable();
+
+    for (;;) {
+        if (thread1) {
+            thread2_awaken = false;
+
+            do {
+                thread_sleep();
+            } while (!thread2_awaken);
+
+            printf("waking_1 ");
+            thread1_awaken = true;
+            thread_wakeup(thread1);
+        }
     }
 }
 
@@ -52,7 +91,6 @@ test(void *arg)
 void
 main(void)
 {
-    struct thread *thread;
     int error;
 
     thread_bootstrap();
@@ -62,13 +100,13 @@ main(void)
     mem_setup();
     thread_setup();
 
-    error = thread_create(&thread, test, NULL, "test1", 1024);
+    error = thread_create(&thread1, test1, NULL, "test1", 1024);
 
     if (error) {
         panic("main: error: unable to create test1 thread");
     }
 
-    error = thread_create(&thread, test, NULL, "test2", 1024);
+    error = thread_create(&thread2, test2, NULL, "test2", 1024);
 
     if (error) {
         panic("main: error: unable to create test2 thread");

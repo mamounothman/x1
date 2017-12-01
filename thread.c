@@ -42,8 +42,14 @@ struct thread_runq {
     struct thread *idle;
 };
 
+enum thread_state {
+    THREAD_STATE_RUNNING,
+    THREAD_STATE_SLEEPING,
+};
+
 struct thread {
     void *sp;
+    enum thread_state state;
     struct list node;
     unsigned int preempt_level;
     char name[THREAD_NAME_MAX_SIZE];
@@ -67,6 +73,30 @@ thread_idle(void *arg)
     for (;;) {
         cpu_idle();
     }
+}
+
+static bool
+thread_is_running(const struct thread *thread)
+{
+    return thread->state == THREAD_STATE_RUNNING;
+}
+
+static bool
+thread_is_sleeping(const struct thread *thread)
+{
+    return thread->state == THREAD_STATE_SLEEPING;
+}
+
+static void
+thread_set_running(struct thread *thread)
+{
+    thread->state = THREAD_STATE_RUNNING;
+}
+
+static void
+thread_set_sleeping(struct thread *thread)
+{
+    thread->state = THREAD_STATE_SLEEPING;
 }
 
 static struct thread *
@@ -102,7 +132,17 @@ thread_runq_get_next(struct thread_runq *runq)
 static void
 thread_runq_add(struct thread_runq *runq, struct thread *thread)
 {
+    assert(thread_is_running(thread));
     list_insert_head(&runq->threads, &thread->node);
+}
+
+static void
+thread_runq_remove(struct thread_runq *runq, struct thread *thread)
+{
+    (void)runq;
+
+    assert(!thread_is_running(thread));
+    list_remove(&thread->node);
 }
 
 static void
@@ -121,6 +161,11 @@ thread_runq_schedule(struct thread_runq *runq)
     struct thread *prev, *next;
 
     prev = thread_runq_get_current(runq);
+
+    if (thread_is_sleeping(prev)) {
+        thread_runq_remove(runq, prev);
+    }
+
     next = thread_runq_get_next(runq);
 
     assert(!cpu_intr_enabled());
@@ -218,6 +263,7 @@ thread_init(struct thread *thread, thread_fn_t fn, void *arg,
         thread->sp = thread_stack_forge(stack, stack_size, fn, arg);
     }
 
+    thread->state = THREAD_STATE_RUNNING;
     thread->preempt_level = 1;
     thread_set_name(thread, name);
     thread->stack = stack;
@@ -314,11 +360,52 @@ thread_yield(void)
 {
     uint32_t eflags;
 
-    eflags = cpu_intr_save();
+    /* TODO Explain order */
     thread_preempt_disable();
+    eflags = cpu_intr_save();
     thread_runq_schedule(&thread_runq);
-    thread_preempt_enable();
     cpu_intr_restore(eflags);
+    thread_preempt_enable();
+}
+
+void
+thread_sleep(void)
+{
+    struct thread *thread;
+    uint32_t eflags;
+
+    thread = thread_self();
+    assert(thread->preempt_level == 1);
+    assert(thread_is_running(thread));
+
+    eflags = cpu_intr_save();
+    thread_set_sleeping(thread);
+    thread_runq_schedule(&thread_runq);
+    assert(thread_is_running(thread));
+    cpu_intr_restore(eflags);
+}
+
+void
+thread_wakeup(struct thread *thread)
+{
+    uint32_t eflags;
+
+    assert(thread);
+
+    if (thread == thread_self()) {
+        return;
+    }
+
+    thread_preempt_disable();
+    eflags = cpu_intr_save();
+
+    if (thread_is_sleeping(thread)) {
+        thread_set_running(thread);
+        thread_runq_add(&thread_runq, thread);
+    }
+
+    cpu_intr_restore(eflags);
+    thread_preempt_enable();
 }
 
 void
