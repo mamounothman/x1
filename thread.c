@@ -119,20 +119,16 @@ static void
 thread_runq_schedule(struct thread_runq *runq)
 {
     struct thread *prev, *next;
-    uint32_t eflags;
-
-    eflags = cpu_intr_save();
-    thread_preempt_disable();
 
     prev = thread_runq_get_current(runq);
     next = thread_runq_get_next(runq);
 
+    assert(!cpu_intr_enabled());
+    assert(prev->preempt_level == 1);
+
     if (prev != next) {
         thread_switch_context(prev, next);
     }
-
-    thread_preempt_enable();
-    cpu_intr_restore(eflags);
 }
 
 void
@@ -156,6 +152,9 @@ thread_main(thread_fn_t fn, void *arg)
 
     assert(!cpu_intr_enabled());
     assert(thread_self()->preempt_level == 1);
+
+    cpu_intr_enable();
+    thread_preempt_enable();
 
     fn(arg);
 
@@ -313,7 +312,13 @@ thread_setup(void)
 void
 thread_yield(void)
 {
+    uint32_t eflags;
+
+    eflags = cpu_intr_save();
+    thread_preempt_disable();
     thread_runq_schedule(&thread_runq);
+    thread_preempt_enable();
+    cpu_intr_restore(eflags);
 }
 
 void

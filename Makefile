@@ -41,7 +41,7 @@ CFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes
 CFLAGS += -std=gnu99
 
 # Build with optimizations as specified by the -O2 option.
-CFLAGS += -O2
+CFLAGS += -O0
 
 # Include debugging symbols, giving inspection tools a lot more debugging
 # data to work with, e.g. allowing them to translate between addresses and

@@ -53,6 +53,21 @@ struct cpu_pseudo_desc {
     uint32_t base;
 } __packed;
 
+struct cpu_intr_frame {
+    uint32_t edi;
+    uint32_t esi;
+    uint32_t ebp;
+    uint32_t edx;
+    uint32_t ecx;
+    uint32_t ebx;
+    uint32_t eax;
+    uint32_t vector;
+    uint32_t error;
+    uint32_t eip;
+    uint32_t cs;
+    uint32_t eflags;
+};
+
 struct cpu_intr_handler {
     cpu_intr_handler_fn_t fn;
     void *arg;
@@ -69,7 +84,7 @@ static struct cpu_intr_handler cpu_intr_handlers[16]; /* TODO Macros */
 
 void cpu_load_gdt(const struct cpu_pseudo_desc *desc);
 void cpu_load_idt(const struct cpu_pseudo_desc *desc);
-void cpu_intr_main(uint32_t vector);
+void cpu_intr_main(struct cpu_intr_frame *frame);
 
 /*
  * Low level interrupt service routines.
@@ -284,16 +299,16 @@ cpu_setup_idt(void)
 }
 
 void
-cpu_intr_main(uint32_t vector)
+cpu_intr_main(struct cpu_intr_frame *frame)
 {
     struct cpu_intr_handler *handler;
 
     assert(!cpu_intr_enabled());
 
-    handler = cpu_lookup_intr_handler(vector - 32); /* TODO Macros */
+    handler = cpu_lookup_intr_handler(frame->vector - 32); /* TODO Macros */
 
     if (!handler || !handler->fn) {
-        printf("cpu: error: invalid handler for vector %u\n", vector);
+        printf("cpu: error: invalid handler for vector %u\n", frame->vector);
         return;
     }
 

@@ -37,9 +37,9 @@ test(void *arg)
     (void)arg;
 
     thread = thread_self();
+    printf("test: name: %s\n", thread_name(thread));
 
     for (;;) {
-        printf("test: name: %s\n", thread_name(thread));
         thread_yield();
     }
 }

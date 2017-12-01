@@ -28,72 +28,96 @@
 
 .global cpu_get_eflags
 cpu_get_eflags:
- pushf
- pop %eax
- ret
+  pushf
+  pop %eax
+  ret
 
 .global cpu_set_eflags
 cpu_set_eflags:
- mov 4(%esp), %eax
- push %eax
- popf
- ret
+  mov 4(%esp), %eax
+  push %eax
+  popf
+  ret
 
 .global cpu_intr_enable
 cpu_intr_enable:
- sti
- ret
+  sti
+  ret
 
 .global cpu_intr_disable
 cpu_intr_disable:
- cli
- ret
+  cli
+  ret
 
 .global cpu_idle
 cpu_idle:
- hlt
- ret
+  hlt
+  ret
 
 .global cpu_load_gdt
 cpu_load_gdt:
- mov 4(%esp), %eax
- lgdt (%eax)
+  mov 4(%esp), %eax
+  lgdt (%eax)
 
- mov $CPU_GDT_SEL_DATA, %eax
- mov %eax, %ds
- mov %eax, %es
- mov %eax, %fs
- mov %eax, %gs
- mov %eax, %ss
+  mov $CPU_GDT_SEL_DATA, %eax
+  mov %eax, %ds
+  mov %eax, %es
+  mov %eax, %fs
+  mov %eax, %gs
+  mov %eax, %ss
 
- ljmp $CPU_GDT_SEL_CODE, $1f
+  ljmp $CPU_GDT_SEL_CODE, $1f
 
 1:
- ret
+  ret
 
 .global cpu_load_idt
 cpu_load_idt:
- mov 4(%esp), %eax
- lidt (%eax)
- ret
+  mov 4(%esp), %eax
+  lidt (%eax)
+  ret
+
+.macro CPU_INTR_STORE_REGISTERS
+  push %edi
+  push %esi
+  push %ebp
+  push %edx
+  push %ecx
+  push %ebx
+  push %eax
+.endm
+
+.macro CPU_INTR_LOAD_REGISTERS
+  pop %eax
+  pop %ebx
+  pop %ecx
+  pop %edx
+  pop %ebp
+  pop %esi
+  pop %edi
+.endm
 
 #define CPU_INTR(vector, name)          \
 .global name;                           \
 name:                                   \
- pushl $0;                              \
- pushl $(vector);                       \
- jmp cpu_intr_common
+  pushl $0;                             \
+  pushl $(vector);                      \
+  jmp cpu_intr_common
 
 #define CPU_INTR_ERROR(vector, name)    \
 .global name;                           \
 name:                                   \
- pushl $(vector);                       \
- jmp cpu_intr_common
+  pushl $(vector);                      \
+  jmp cpu_intr_common
 
 cpu_intr_common:
- call cpu_intr_main
- add $8, %esp               /* skip vector and error */
- iret
+  CPU_INTR_STORE_REGISTERS
+  push %esp                 /* push the address of the interrupt frame */
+  call cpu_intr_main
+  add $4, %esp              /* skip frame address */
+  CPU_INTR_LOAD_REGISTERS
+  add $8, %esp              /* skip vector and error */
+  iret
 
 CPU_INTR_ERROR(CPU_IDT_VECT_GP, cpu_isr_general_protection)
 
