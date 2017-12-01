@@ -35,13 +35,13 @@ CPPFLAGS += -I$(shell $(CC) -print-file-name=include)
 # components.
 
 # These are common warning options.
-CFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes
+CFLAGS = -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes
 
 # Set the language as C99 with GNU extensions.
 CFLAGS += -std=gnu99
 
 # Build with optimizations as specified by the -O2 option.
-CFLAGS += -O0
+CFLAGS += -O2
 
 # Include debugging symbols, giving inspection tools a lot more debugging
 # data to work with, e.g. allowing them to translate between addresses and

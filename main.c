@@ -40,15 +40,24 @@ static bool thread2_awaken;
 static void
 test1(void *arg)
 {
+    unsigned long i;
+
     (void)arg;
 
     thread_preempt_disable();
 
     thread1_awaken = true;
 
+    i = 0;
+
     for (;;) {
         if (thread2) {
-            printf("waking_2 ");
+            if ((i % 1000000) == 0) {
+                printf("%s ", thread_name(thread_self()));
+            }
+
+            i++;
+
             thread2_awaken = true;
             thread_wakeup(thread2);
 
@@ -64,9 +73,13 @@ test1(void *arg)
 static void
 test2(void *arg)
 {
+    unsigned long i;
+
     (void)arg;
 
     thread_preempt_disable();
+
+    i = 0;
 
     for (;;) {
         if (thread1) {
@@ -76,7 +89,12 @@ test2(void *arg)
                 thread_sleep();
             } while (!thread2_awaken);
 
-            printf("waking_1 ");
+            if ((i % 1000000) == 0) {
+                printf("%s ", thread_name(thread_self()));
+            }
+
+            i++;
+
             thread1_awaken = true;
             thread_wakeup(thread1);
         }
@@ -111,6 +129,8 @@ main(void)
     if (error) {
         panic("main: error: unable to create test2 thread");
     }
+
+    printf("Hello, world !\n");
 
     thread_enable_scheduler();
 
