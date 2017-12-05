@@ -43,7 +43,7 @@ test(void *arg)
     thread = thread_self();
 
     for (unsigned int i = 0; /* no condition */; i++) {
-        if ((i % 1000000) == 0) {
+        if ((i % 1000000000) == 0) {
             printf("%s ", thread_name(thread));
         }
     }
