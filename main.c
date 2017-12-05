@@ -24,6 +24,7 @@
 #include <stdbool.h>
 
 #include <cpu.h>
+#include <i8254.h>
 #include <i8259.h>
 #include <mem.h>
 #include <panic.h>
@@ -114,6 +115,7 @@ main(void)
     thread_bootstrap();
     cpu_setup();
     i8259_setup();
+    i8254_setup();
     uart_setup();
     mem_setup();
     thread_setup();

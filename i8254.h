@@ -19,40 +19,17 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ *
+ * Intel 8254 programmable interval timer (PIT) driver.
  */
 
-#ifndef _THREAD_H
-#define _THREAD_H
+#ifndef _I8254_H
+#define _I8254_H
 
-#include <stdbool.h>
-#include <stddef.h>
+/*
+ * Initialize the i8254 module.
+ */
+void i8254_setup(void);
 
-#define THREAD_SCHED_FREQ 100
-
-#define THREAD_NAME_MAX_SIZE 16
-
-typedef void (*thread_fn_t)(void *arg);
-
-struct thread;
-
-void thread_bootstrap(void);
-void thread_setup(void);
-
-int thread_create(struct thread **threadp, thread_fn_t fn, void *arg,
-                  const char *name, size_t stack_size);
-void thread_join(struct thread *thread);
-
-struct thread * thread_self(void);
-const char * thread_name(const struct thread *thread);
-
-void thread_yield(void);
-void thread_sleep(void);
-void thread_wakeup(struct thread *thread);
-
-void thread_preempt_enable(void);
-void thread_preempt_disable(void);
-bool thread_preempt_enabled(void);
-
-void thread_enable_scheduler(void) __attribute__((noreturn));
-
-#endif /* _THREAD_H */
+#endif /* _I8254_H */
