@@ -100,6 +100,24 @@ thread_set_sleeping(struct thread *thread)
     thread->state = THREAD_STATE_SLEEPING;
 }
 
+static bool
+thread_should_yield(const struct thread *thread)
+{
+    return thread->yield;
+}
+
+static void
+thread_set_yield(struct thread *thread)
+{
+    thread->yield = true;
+}
+
+static void
+thread_clear_yield(struct thread *thread)
+{
+    thread->yield = false;
+}
+
 static struct thread *
 thread_runq_get_current(struct thread_runq *runq)
 {
@@ -135,6 +153,7 @@ thread_runq_add(struct thread_runq *runq, struct thread *thread)
 {
     assert(thread_is_running(thread));
     list_insert_head(&runq->threads, &thread->node);
+    thread_set_yield(runq->current);
 }
 
 static void
@@ -371,6 +390,7 @@ thread_yield(void)
     /* TODO Explain order */
     thread_preempt_disable();
     eflags = cpu_intr_save();
+    thread_clear_yield(thread_self());
     thread_runq_schedule(&thread_runq);
     cpu_intr_restore(eflags);
     thread_preempt_enable();
@@ -379,12 +399,7 @@ thread_yield(void)
 void
 thread_yield_if_needed(void)
 {
-    struct thread *thread;
-
-    thread = thread_self();
-
-    if (thread->yield) {
-        thread->yield = false;
+    if (thread_should_yield(thread_self())) {
         thread_yield();
     }
 }
@@ -467,5 +482,5 @@ thread_preempt_enabled(void)
 void
 thread_report_tick(void)
 {
-    thread_self()->yield = true;
+    thread_set_yield(thread_self());
 }
