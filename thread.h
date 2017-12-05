@@ -46,12 +46,16 @@ struct thread * thread_self(void);
 const char * thread_name(const struct thread *thread);
 
 void thread_yield(void);
+void thread_yield_if_needed(void);
+
 void thread_sleep(void);
 void thread_wakeup(struct thread *thread);
 
 void thread_preempt_enable(void);
 void thread_preempt_disable(void);
 bool thread_preempt_enabled(void);
+
+void thread_report_tick(void);
 
 void thread_enable_scheduler(void) __attribute__((noreturn));
 

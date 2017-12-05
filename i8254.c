@@ -49,6 +49,7 @@ i8254_intr_handler(void *arg)
     (void)arg;
 
     i8259_irq_eoi(I8254_IRQ);
+    thread_report_tick();
 }
 
 void

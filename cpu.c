@@ -30,6 +30,7 @@
 #include <error.h>
 #include <macros.h>
 #include <printf.h>
+#include <thread.h>
 
 #define CPU_SEG_DATA_RW         0x00000200
 #define CPU_SEG_CODE_RX         0x00000900
@@ -313,6 +314,7 @@ cpu_intr_main(struct cpu_intr_frame *frame)
     }
 
     handler->fn(handler->arg);
+    thread_yield_if_needed();
 }
 
 int

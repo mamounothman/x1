@@ -50,6 +50,7 @@ enum thread_state {
 struct thread {
     void *sp;
     enum thread_state state;
+    bool yield;
     struct list node;
     unsigned int preempt_level;
     char name[THREAD_NAME_MAX_SIZE];
@@ -162,14 +163,14 @@ thread_runq_schedule(struct thread_runq *runq)
 
     prev = thread_runq_get_current(runq);
 
+    assert(!cpu_intr_enabled());
+    assert(prev->preempt_level == 1);
+
     if (thread_is_sleeping(prev)) {
         thread_runq_remove(runq, prev);
     }
 
     next = thread_runq_get_next(runq);
-
-    assert(!cpu_intr_enabled());
-    assert(prev->preempt_level == 1);
 
     if (prev != next) {
         thread_switch_context(prev, next);
@@ -264,6 +265,7 @@ thread_init(struct thread *thread, thread_fn_t fn, void *arg,
     }
 
     thread->state = THREAD_STATE_RUNNING;
+    thread->yield = false;
     thread->preempt_level = 1;
     thread_set_name(thread, name);
     thread->stack = stack;
@@ -360,12 +362,29 @@ thread_yield(void)
 {
     uint32_t eflags;
 
+    if (!thread_preempt_enabled()) {
+        return;
+    }
+
     /* TODO Explain order */
     thread_preempt_disable();
     eflags = cpu_intr_save();
     thread_runq_schedule(&thread_runq);
     cpu_intr_restore(eflags);
     thread_preempt_enable();
+}
+
+void
+thread_yield_if_needed(void)
+{
+    struct thread *thread;
+
+    thread = thread_self();
+
+    if (thread->yield) {
+        thread->yield = false;
+        thread_yield();
+    }
 }
 
 void
@@ -419,7 +438,7 @@ thread_preempt_enable(void)
     assert(thread->preempt_level != 0);
     thread->preempt_level--;
 
-    /* TODO Reschedule if necessary */
+    thread_yield_if_needed();
 }
 
 void
@@ -441,4 +460,10 @@ thread_preempt_enabled(void)
 
     thread = thread_self();
     return thread->preempt_level == 0;
+}
+
+void
+thread_report_tick(void)
+{
+    thread_self()->yield = true;
 }
