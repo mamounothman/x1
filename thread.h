@@ -40,6 +40,7 @@ void thread_setup(void);
 
 int thread_create(struct thread **threadp, thread_fn_t fn, void *arg,
                   const char *name, size_t stack_size);
+void thread_exit(void);
 void thread_join(struct thread *thread);
 
 struct thread * thread_self(void);
