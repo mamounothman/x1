@@ -205,7 +205,9 @@ thread_main(thread_fn_t fn, void *arg)
     fn(arg);
 
     /* TODO Destruction */
-    cpu_halt();
+    for (;;) {
+        cpu_idle();
+    }
 }
 
 const char *
