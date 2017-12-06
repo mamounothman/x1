@@ -40,6 +40,8 @@ test(void *arg)
 {
     struct thread *thread;
 
+    (void)arg;
+
     thread = thread_self();
 
     for (unsigned int i = 0; /* no condition */; i++) {
