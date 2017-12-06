@@ -27,7 +27,7 @@
 #include <macros.h>
 #include <thread.h>
 
-#define I8254_FREQ 1193182
+#define I8254_FREQ                  1193182
 
 #define I8254_PORT_CHANNEL0         0x40
 #define I8254_PORT_MODE             0x43
