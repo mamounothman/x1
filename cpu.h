@@ -51,7 +51,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef void (*cpu_intr_handler_fn_t)(void *arg);
+typedef void (*cpu_irq_handler_fn_t)(void *arg);
 
 /*
  * Get/set the content of the EFLAGS register.
@@ -82,7 +82,7 @@ void cpu_idle(void);
 
 void cpu_halt(void) __attribute__((noreturn));
 
-int cpu_intr_register(unsigned int irq, cpu_intr_handler_fn_t fn, void *arg);
+void cpu_irq_register(unsigned int irq, cpu_irq_handler_fn_t fn, void *arg);
 
 void cpu_setup(void);
 

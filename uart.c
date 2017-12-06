@@ -26,7 +26,6 @@
 #include <stdint.h>
 
 #include <cpu.h>
-#include <i8259.h>
 #include <io.h>
 #include <printf.h>
 #include <uart.h>
@@ -54,13 +53,11 @@
 #define UART_REG_LCR            3
 
 static void
-uart_intr_handler(void *arg)
+uart_irq_handler(void *arg)
 {
     uint8_t byte;
 
     (void)arg;
-
-    i8259_irq_eoi(UART_IRQ);
 
     byte = io_read(UART_COM1_PORT + UART_REG_DAT);
 
@@ -81,8 +78,7 @@ uart_setup(void)
                                             | UART_LCR_PARITY_NONE);
 
     /* TODO Explain order */
-    cpu_intr_register(UART_IRQ, uart_intr_handler, NULL);
-    i8259_irq_enable(UART_IRQ);
+    cpu_irq_register(UART_IRQ, uart_irq_handler, NULL);
     io_write(UART_COM1_PORT + UART_REG_IER, UART_IER_DATA);
 }
 

@@ -23,7 +23,6 @@
 
 #include <cpu.h>
 #include <i8254.h>
-#include <i8259.h>
 #include <io.h>
 #include <macros.h>
 #include <thread.h>
@@ -44,11 +43,9 @@
 #define I8254_IRQ                   0
 
 static void
-i8254_intr_handler(void *arg)
+i8254_irq_handler(void *arg)
 {
     (void)arg;
-
-    i8259_irq_eoi(I8254_IRQ);
     thread_report_tick();
 }
 
@@ -56,6 +53,9 @@ void
 i8254_setup(void)
 {
     uint16_t value;
+
+    /* TODO Explain order */
+    cpu_irq_register(I8254_IRQ, i8254_irq_handler, NULL);
 
     io_write(I8254_PORT_MODE, I8254_CONTROL_COUNTER0
                               | I8254_CONTROL_RW_MSB
@@ -66,8 +66,4 @@ i8254_setup(void)
     value = I8254_INITIAL_COUNT;
     io_write(I8254_PORT_CHANNEL0, value & 0xff);
     io_write(I8254_PORT_CHANNEL0, value >> 8);
-
-    /* TODO Explain order */
-    cpu_intr_register(I8254_IRQ, i8254_intr_handler, NULL);
-    i8259_irq_enable(I8254_IRQ);
 }

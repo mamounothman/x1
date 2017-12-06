@@ -28,6 +28,7 @@
 
 #include <cpu.h>
 #include <error.h>
+#include <i8259.h>
 #include <macros.h>
 #include <printf.h>
 #include <thread.h>
@@ -69,8 +70,8 @@ struct cpu_intr_frame {
     uint32_t eflags;
 };
 
-struct cpu_intr_handler {
-    cpu_intr_handler_fn_t fn;
+struct cpu_irq_handler {
+    cpu_irq_handler_fn_t fn;
     void *arg;
 };
 
@@ -81,7 +82,7 @@ static struct cpu_seg_desc cpu_gdt[CPU_GDT_SIZE] __aligned(8);
 
 static struct cpu_seg_desc cpu_idt[CPU_IDT_SIZE] __aligned(8);
 
-static struct cpu_intr_handler cpu_intr_handlers[16]; /* TODO Macros */
+static struct cpu_irq_handler cpu_irq_handlers[16]; /* TODO Macros */
 
 void cpu_load_gdt(const struct cpu_pseudo_desc *desc);
 void cpu_load_idt(const struct cpu_pseudo_desc *desc);
@@ -225,29 +226,25 @@ cpu_get_gdt_entry(size_t selector)
 }
 
 static void
-cpu_intr_handler_init(struct cpu_intr_handler *handler)
+cpu_irq_handler_init(struct cpu_irq_handler *handler)
 {
     handler->fn = NULL;
 }
 
-static struct cpu_intr_handler *
-cpu_lookup_intr_handler(unsigned int irq)
+static struct cpu_irq_handler *
+cpu_lookup_irq_handler(unsigned int irq)
 {
-    assert(irq < ARRAY_SIZE(cpu_intr_handlers));
-    return &cpu_intr_handlers[irq];
+    assert(irq < ARRAY_SIZE(cpu_irq_handlers));
+    return &cpu_irq_handlers[irq];
 }
 
-static int
-cpu_intr_handler_set_fn(struct cpu_intr_handler *handler,
-                        cpu_intr_handler_fn_t fn, void *arg)
+static void
+cpu_irq_handler_set_fn(struct cpu_irq_handler *handler,
+                       cpu_irq_handler_fn_t fn, void *arg)
 {
-    if (handler->fn != NULL) {
-        return ERROR_AGAIN;
-    }
-
+    assert(handler->fn == NULL);
     handler->fn = fn;
     handler->arg = arg;
-    return 0;
 }
 
 static void
@@ -268,8 +265,8 @@ cpu_setup_idt(void)
 {
     struct cpu_pseudo_desc pseudo_desc;
 
-    for (size_t i = 0; i < ARRAY_SIZE(cpu_intr_handlers); i++) {
-        cpu_intr_handler_init(cpu_lookup_intr_handler(i));
+    for (size_t i = 0; i < ARRAY_SIZE(cpu_irq_handlers); i++) {
+        cpu_irq_handler_init(cpu_lookup_irq_handler(i));
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(cpu_idt); i++) {
@@ -302,14 +299,26 @@ cpu_setup_idt(void)
 void
 cpu_intr_main(struct cpu_intr_frame *frame)
 {
-    struct cpu_intr_handler *handler;
+    struct cpu_irq_handler *handler;
+    unsigned int irq;
 
     assert(!cpu_intr_enabled());
 
-    handler = cpu_lookup_intr_handler(frame->vector - 32); /* TODO Macros */
+    /* TODO Macros */
+    if (frame->vector < 32) {
+        /* TODO Handle exceptions */
+        return;
+    }
+
+    irq = frame->vector - 32;
+
+    /* TODO Explain order */
+    i8259_irq_eoi(irq);
+
+    handler = cpu_lookup_irq_handler(irq);
 
     if (!handler || !handler->fn) {
-        printf("cpu: error: invalid handler for vector %u\n", frame->vector);
+        printf("cpu: error: invalid handler for irq %u\n", irq);
         return;
     }
 
@@ -317,13 +326,16 @@ cpu_intr_main(struct cpu_intr_frame *frame)
     thread_yield_if_needed();
 }
 
-int
-cpu_intr_register(unsigned int irq, cpu_intr_handler_fn_t fn, void *arg)
+void
+cpu_irq_register(unsigned int irq, cpu_irq_handler_fn_t fn, void *arg)
 {
-    struct cpu_intr_handler *handler;
+    struct cpu_irq_handler *handler;
 
-    handler = cpu_lookup_intr_handler(irq);
-    return cpu_intr_handler_set_fn(handler, fn, arg);
+    handler = cpu_lookup_irq_handler(irq);
+    cpu_irq_handler_set_fn(handler, fn, arg);
+
+    /* TODO Explain order */
+    i8259_irq_enable(irq);
 }
 
 void
