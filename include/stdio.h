@@ -28,6 +28,9 @@
 
 #include <lib/fmt.h>
 
+/* TODO Discuss () */
+#define EOF (-1)
+
 int printf(const char *format, ...)
     __attribute__((format(printf, 1, 2)));
 

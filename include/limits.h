@@ -21,14 +21,9 @@
  * SOFTWARE.
  */
 
-#ifndef _ERROR_H
-#define _ERROR_H
+#ifndef _LIMITS_H
+#define _LIMITS_H
 
-enum {
-    ERROR_INVAL = 1,
-    ERROR_AGAIN,
-    ERROR_NOMEM,
-    ERROR_IO,
-};
+#define CHAR_BIT 8
 
-#endif /* _ERROR_H */
+#endif /* _LIMITS_H */

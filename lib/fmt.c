@@ -24,24 +24,22 @@
  */
 
 #include <assert.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <lib/fmt.h>
 #include <lib/macros.h>
 
-#define CHAR_BIT 8
+#include <src/error.h>
 
-#define ERROR_FORMAT 1
-#define ERROR_NORES  2
-#define ERROR_AGAIN  3
-
-/* TODO Discuss () */
-#define EOF (-1)
-
+/*
+ * XXX This type is specified by POSIX. Directly declare it for simplicity.
+ */
 typedef long ssize_t;
 
 /*
@@ -412,7 +410,7 @@ fmt_sprintf_state_consume(struct fmt_sprintf_state *state)
     c = fmt_consume(&state->format);
 
     if (c == '\0') {
-        return ERROR_NORES;
+        return ERROR_IO;
     }
 
     if (c != '%') {
@@ -1077,7 +1075,7 @@ fmt_sscanf_state_discard_char(struct fmt_sscanf_state *state, char c)
             state->nr_convs = EOF;
         }
 
-        return ERROR_FORMAT;
+        return ERROR_INVAL;
     }
 
     return 0;
@@ -1094,7 +1092,7 @@ fmt_sscanf_state_consume(struct fmt_sscanf_state *state)
     c = fmt_consume(&state->format);
 
     if (c == '\0') {
-        return ERROR_NORES;
+        return ERROR_IO;
     }
 
     if (c != '%') {
@@ -1196,7 +1194,7 @@ fmt_sscanf_state_produce_int(struct fmt_sscanf_state *state)
     if (i == 0) {
         if (c == '\0') {
             fmt_sscanf_state_report_error(state);
-            return ERROR_FORMAT;
+            return ERROR_INVAL;
         }
 
         buf[0] = '0';
@@ -1390,7 +1388,7 @@ fmt_sscanf_state_produce_str(struct fmt_sscanf_state *state)
 
     if (state->str == orig) {
         fmt_sscanf_state_report_error(state);
-        return ERROR_FORMAT;
+        return ERROR_INVAL;
     }
 
     if (dest != NULL) {
@@ -1425,7 +1423,7 @@ fmt_sscanf_state_produce(struct fmt_sscanf_state *state)
         return fmt_sscanf_state_discard_char(state, '%');
     default:
         fmt_sscanf_state_report_error(state);
-        return ERROR_FORMAT;
+        return ERROR_INVAL;
     }
 }
 
