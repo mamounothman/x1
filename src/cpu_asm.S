@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-#include <cpu.h>
+#include "cpu.h"
 
 .section .text
 .code32

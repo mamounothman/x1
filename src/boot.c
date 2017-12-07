@@ -21,51 +21,10 @@
  * SOFTWARE.
  */
 
-#include <stdarg.h>
 #include <stdint.h>
 
-#include <cpu.h>
-#include <fmt.h>
-#include <printf.h>
-#include <thread.h>
-#include <uart.h>
+#include <lib/macros.h>
 
-/* TODO Discuss stack vs static and size */
-#define PRINTF_BUFFER_SIZE 1024
+#include "boot.h"
 
-static char printf_buffer[PRINTF_BUFFER_SIZE];
-
-int
-printf(const char *format, ...)
-{
-    va_list ap;
-    int length;
-
-    va_start(ap, format);
-    length = vprintf(format, ap);
-    va_end(ap);
-
-    return length;
-}
-
-int
-vprintf(const char *format, va_list ap)
-{
-    uint32_t eflags;
-    int length;
-
-    thread_preempt_disable();
-    eflags = cpu_intr_save();
-
-    length = fmt_vsnprintf(printf_buffer, sizeof(printf_buffer), format, ap);
-
-    for (const char *ptr = printf_buffer; *ptr != '\0'; ptr++) {
-        /* TODO Discuss cast */
-        uart_write((uint8_t)*ptr);
-    }
-
-    cpu_intr_restore(eflags);
-    thread_preempt_enable();
-
-    return length;
-}
+uint8_t boot_stack[BOOT_STACK_SIZE] __aligned(4);

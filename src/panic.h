@@ -24,7 +24,7 @@
 #ifndef _PANIC_H
 #define _PANIC_H
 
-#include <macros.h>
+#include <lib/macros.h>
 
 void panic(const char *format, ...)
     __attribute__((noreturn))

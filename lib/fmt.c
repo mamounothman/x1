@@ -30,8 +30,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <fmt.h>
-#include <macros.h>
+#include <lib/fmt.h>
+#include <lib/macros.h>
 
 #define CHAR_BIT 8
 

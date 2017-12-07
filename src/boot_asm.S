@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-#include <boot.h>
+#include "boot.h"
 
 /*
  * These are values used in the OS image header, as defined by the multiboot

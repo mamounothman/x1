@@ -11,7 +11,7 @@ CC = gcc
 # components.
 
 # The -I option is used to add directories to the search list.
-CPPFLAGS = -I.
+CPPFLAGS = -Iinclude -I.
 
 # Generate code for a 32-bits environment.
 CPPFLAGS += -m32
@@ -98,7 +98,7 @@ LDFLAGS += -nostdlib
 LDFLAGS += -Xlinker --build-id=none
 
 # Pass the linker script path to the linker.
-LDFLAGS += -Xlinker -T kernel.lds
+LDFLAGS += -Xlinker -T src/kernel.lds
 
 # Link against libgcc. This library is a companion to the compiler and
 # adds support for operations required by C99 but that the hardware
@@ -107,23 +107,26 @@ LDFLAGS += -Xlinker -T kernel.lds
 LIBS = -lgcc
 
 BINARY = x1
+
 SOURCES = \
-	boot_asm.S \
-	boot.c \
-	cpu.c \
-	cpu_asm.S \
-	fmt.c \
-	i8254.c \
-	i8259.c \
-	io_asm.S \
-	main.c \
-	mem.c \
-	panic.c \
-	printf.c \
-	string.c \
-	thread_asm.S \
-	thread.c \
-	uart.c
+	src/boot_asm.S \
+	src/boot.c \
+	src/cpu.c \
+	src/cpu_asm.S \
+	src/i8254.c \
+	src/i8259.c \
+	src/io_asm.S \
+	src/main.c \
+	src/mem.c \
+	src/panic.c \
+	src/printf.c \
+	src/string.c \
+	src/thread_asm.S \
+	src/thread.c \
+	src/uart.c
+
+SOURCES += \
+	lib/fmt.c
 
 OBJECTS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SOURCES)))
 

@@ -21,9 +21,34 @@
  * SOFTWARE.
  */
 
-#include <stdint.h>
+#ifndef _ASSERT_H
+#define _ASSERT_H
 
-#include <boot.h>
-#include <macros.h>
+#ifdef NDEBUG
 
-uint8_t boot_stack[BOOT_STACK_SIZE] __aligned(4);
+/*
+ * The assert() macro normally doesn't produce side effects when turned off,
+ * but this may result in many "set but not used" warnings. Using sizeof()
+ * silences these warnings without producing side effects.
+ */
+#define assert(expression) ((void)sizeof(expression))
+
+#else /* NDEBUG */
+
+#include <lib/macros.h>
+#include <src/panic.h>
+
+/*
+ * Panic if the given expression is false.
+ */
+#define assert(expression)                                          \
+MACRO_BEGIN                                                         \
+    if (unlikely(!(expression))) {                                  \
+        panic("assertion (%s) failed in %s:%d, function %s()",      \
+              __QUOTE(expression), __FILE__, __LINE__, __func__);   \
+    }                                                               \
+MACRO_END
+
+#endif /* NDEBUG */
+
+#endif /* _ASSERT_H */

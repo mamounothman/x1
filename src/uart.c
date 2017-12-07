@@ -24,12 +24,12 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
-#include <cpu.h>
-#include <io.h>
-#include <printf.h>
-#include <uart.h>
-#include <thread.h>
+#include "cpu.h"
+#include "io.h"
+#include "uart.h"
+#include "thread.h"
 
 #define UART_BAUD_RATE          115200
 

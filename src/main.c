@@ -22,15 +22,15 @@
  */
 
 #include <stdbool.h>
+#include <stdio.h>
 
-#include <cpu.h>
-#include <i8254.h>
-#include <i8259.h>
-#include <mem.h>
-#include <panic.h>
-#include <printf.h>
-#include <thread.h>
-#include <uart.h>
+#include "cpu.h"
+#include "i8254.h"
+#include "i8259.h"
+#include "mem.h"
+#include "panic.h"
+#include "thread.h"
+#include "uart.h"
 
 static struct thread *thread1;
 static struct thread *thread2;

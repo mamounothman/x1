@@ -25,13 +25,14 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
-#include <cpu.h>
-#include <error.h>
-#include <i8259.h>
-#include <macros.h>
-#include <printf.h>
-#include <thread.h>
+#include <lib/macros.h>
+
+#include "cpu.h"
+#include "error.h"
+#include "i8259.h"
+#include "thread.h"
 
 #define CPU_SEG_DATA_RW         0x00000200
 #define CPU_SEG_CODE_RX         0x00000900

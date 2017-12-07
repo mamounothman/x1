@@ -21,34 +21,50 @@
  * SOFTWARE.
  */
 
-#ifndef _ASSERT_H
-#define _ASSERT_H
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
 
-#ifdef NDEBUG
+#include "cpu.h"
+#include "thread.h"
+#include "uart.h"
 
-/*
- * The assert() macro normally doesn't produce side effects when turned off,
- * but this may result in many "set but not used" warnings. Using sizeof()
- * silences these warnings without producing side effects.
- */
-#define assert(expression) ((void)sizeof(expression))
+/* TODO Discuss stack vs static and size */
+#define PRINTF_BUFFER_SIZE 1024
 
-#else /* NDEBUG */
+static char printf_buffer[PRINTF_BUFFER_SIZE];
 
-#include <macros.h>
-#include <panic.h>
+int
+printf(const char *format, ...)
+{
+    va_list ap;
+    int length;
 
-/*
- * Panic if the given expression is false.
- */
-#define assert(expression)                                          \
-MACRO_BEGIN                                                         \
-    if (unlikely(!(expression))) {                                  \
-        panic("assertion (%s) failed in %s:%d, function %s()",      \
-              __QUOTE(expression), __FILE__, __LINE__, __func__);   \
-    }                                                               \
-MACRO_END
+    va_start(ap, format);
+    length = vprintf(format, ap);
+    va_end(ap);
 
-#endif /* NDEBUG */
+    return length;
+}
 
-#endif /* _ASSERT_H */
+int
+vprintf(const char *format, va_list ap)
+{
+    uint32_t eflags;
+    int length;
+
+    thread_preempt_disable();
+    eflags = cpu_intr_save();
+
+    length = vsnprintf(printf_buffer, sizeof(printf_buffer), format, ap);
+
+    for (const char *ptr = printf_buffer; *ptr != '\0'; ptr++) {
+        /* TODO Discuss cast */
+        uart_write((uint8_t)*ptr);
+    }
+
+    cpu_intr_restore(eflags);
+    thread_preempt_enable();
+
+    return length;
+}

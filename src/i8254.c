@@ -21,11 +21,12 @@
  * SOFTWARE.
  */
 
-#include <cpu.h>
-#include <i8254.h>
-#include <io.h>
-#include <macros.h>
-#include <thread.h>
+#include <lib/macros.h>
+
+#include "cpu.h"
+#include "i8254.h"
+#include "io.h"
+#include "thread.h"
 
 #define I8254_FREQ                  1193182
 

@@ -21,10 +21,12 @@
  * SOFTWARE.
  */
 
-#ifndef _PRINTF_H
-#define _PRINTF_H
+#ifndef _STDIO_H
+#define _STDIO_H
 
 #include <stdarg.h>
+
+#include <lib/fmt.h>
 
 int printf(const char *format, ...)
     __attribute__((format(printf, 1, 2)));
@@ -32,4 +34,11 @@ int printf(const char *format, ...)
 int vprintf(const char *format, va_list ap)
     __attribute__((format(printf, 1, 0)));
 
-#endif /* _PRINTF_H */
+#define sprintf fmt_sprintf
+#define vsprintf fmt_vsprintf
+#define snprintf fmt_snprintf
+#define vsnprintf fmt_vsnprintf
+#define sscanf fmt_sscanf
+#define vsscanf fmt_vsscanf
+
+#endif /* _STDIO_H */

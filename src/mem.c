@@ -127,10 +127,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <list.h>
-#include <macros.h>
-#include <mem.h>
-#include <thread.h>
+#include <lib/list.h>
+#include <lib/macros.h>
+
+#include "mem.h"
+#include "thread.h"
 
 /*
  * Total size of the backing storage heap.

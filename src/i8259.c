@@ -42,11 +42,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <cpu.h>
-#include <error.h>
-#include <i8259.h>
-#include <io.h>
-#include <macros.h>
+#include <lib/macros.h>
+
+#include "cpu.h"
+#include "error.h"
+#include "i8259.h"
+#include "io.h"
 
 #define I8259_IRQ_CASCADE   2        /* IRQ used for cascading on the master */
 #define I8259_NR_IRQS       8

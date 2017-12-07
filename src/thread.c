@@ -25,14 +25,15 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
-#include <cpu.h>
-#include <error.h>
-#include <fmt.h>
-#include <list.h>
-#include <mem.h>
-#include <panic.h>
-#include <thread.h>
+#include <lib/list.h>
+
+#include "cpu.h"
+#include "error.h"
+#include "mem.h"
+#include "panic.h"
+#include "thread.h"
 
 #define THREAD_STACK_MIN_SIZE 512
 
@@ -238,7 +239,7 @@ thread_name(const struct thread *thread)
 static void
 thread_set_name(struct thread *thread, const char *name)
 {
-    fmt_snprintf(thread->name, sizeof(thread->name), "%s", name);
+    snprintf(thread->name, sizeof(thread->name), "%s", name);
 }
 
 static void

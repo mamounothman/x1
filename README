@@ -96,10 +96,29 @@ even before starting playing with X1 :
 
 The two files reader should use as their entry points are :
 
- - boot_asm.S
+ - src/boot_asm.S
      The assembly source file containing the very first instructions.
- - kernel.lds
+ - src/kernel.lds
      The linker script used to control the link step.
+
+Sources organization
+--------------------
+
+The project sources are split into three directories :
+
+- include
+    This directory may only contain standard headers, normally provided
+    by the "implementation" (e.g. the compiler and the C library) in a
+    hosted environment. Because this is a kernel, the environment is
+    free standing instead, so any additional standard service must be
+    added manually. See ISO/IEC 9899:1999 5.1.2.1 "Freestanding environment"
+    in the C99 specification for all the details.
+- lib
+    This directory contains external code used as a library by the kernel.
+    These files are copied from the librbraun library [7] and are meant to
+    provide a tiny and easily embedded "development kit".
+- src
+    This directory contains the actual kernel code.
 
 
 References
@@ -111,3 +130,4 @@ References
 [4] Multiboot specification : https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
 [5] OSDev website : http://wiki.osdev.org/
 [6] C99 specification : http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
+[7] https://www.sceen.net/basic-modules-library-for-c/
