@@ -26,12 +26,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <lib/list.h>
 
 #include "cpu.h"
 #include "error.h"
-#include "mem.h"
 #include "panic.h"
 #include "thread.h"
 
@@ -304,16 +304,16 @@ thread_create(struct thread **threadp, thread_fn_t fn, void *arg,
 
     /* TODO Check stack size & alignment */
 
-    thread = mem_alloc(sizeof(*thread));
+    thread = malloc(sizeof(*thread));
 
     if (!thread) {
         return ERROR_NOMEM;
     }
 
-    stack = mem_alloc(stack_size);
+    stack = malloc(stack_size);
 
     if (!stack) {
-        mem_free(thread);
+        free(thread);
         return ERROR_NOMEM;
     }
 
@@ -336,13 +336,13 @@ thread_create_idle(void)
     struct thread *idle;
     void *stack;
 
-    idle = mem_alloc(sizeof(*idle));
+    idle = malloc(sizeof(*idle));
 
     if (!idle) {
         panic("thread: unable to allocate idle thread");
     }
 
-    stack = mem_alloc(THREAD_STACK_MIN_SIZE);
+    stack = malloc(THREAD_STACK_MIN_SIZE);
 
     if (!stack) {
         panic("thread: unable to allocate idle thread stack");

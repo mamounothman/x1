@@ -21,24 +21,12 @@
  * SOFTWARE.
  */
 
-#ifndef _STDIO_H
-#define _STDIO_H
+#ifndef _STDLIB_H
+#define _STDLIB_H
 
-#include <stdarg.h>
+#include <src/mem.h>
 
-#include <lib/fmt.h>
+#define malloc  mem_alloc
+#define free    mem_free
 
-int printf(const char *format, ...)
-    __attribute__((format(printf, 1, 2)));
-
-int vprintf(const char *format, va_list ap)
-    __attribute__((format(printf, 1, 0)));
-
-#define sprintf     fmt_sprintf
-#define vsprintf    fmt_vsprintf
-#define snprintf    fmt_snprintf
-#define vsnprintf   fmt_vsnprintf
-#define sscanf      fmt_sscanf
-#define vsscanf     fmt_vsscanf
-
-#endif /* _STDIO_H */
+#endif /* _STDLIB_H */
