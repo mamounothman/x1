@@ -46,6 +46,7 @@ struct thread_runq {
 enum thread_state {
     THREAD_STATE_RUNNING,
     THREAD_STATE_SLEEPING,
+    THREAD_STATE_DEAD,
 };
 
 struct thread {
@@ -54,6 +55,7 @@ struct thread {
     bool yield;
     struct list node;
     unsigned int preempt_level;
+    struct thread *joiner;
     char name[THREAD_NAME_MAX_SIZE];
     void *stack;
 };
@@ -83,12 +85,6 @@ thread_is_running(const struct thread *thread)
     return thread->state == THREAD_STATE_RUNNING;
 }
 
-static bool
-thread_is_sleeping(const struct thread *thread)
-{
-    return thread->state == THREAD_STATE_SLEEPING;
-}
-
 static void
 thread_set_running(struct thread *thread)
 {
@@ -99,6 +95,18 @@ static void
 thread_set_sleeping(struct thread *thread)
 {
     thread->state = THREAD_STATE_SLEEPING;
+}
+
+static bool
+thread_is_dead(const struct thread *thread)
+{
+    return thread->state == THREAD_STATE_DEAD;
+}
+
+static void
+thread_set_dead(struct thread *thread)
+{
+    thread->state = THREAD_STATE_DEAD;
 }
 
 static bool
@@ -186,7 +194,7 @@ thread_runq_schedule(struct thread_runq *runq)
     assert(!cpu_intr_enabled());
     assert(prev->preempt_level == 1);
 
-    if (thread_is_sleeping(prev)) {
+    if (!thread_is_running(prev)) {
         thread_runq_remove(runq, prev);
     }
 
@@ -224,10 +232,7 @@ thread_main(thread_fn_t fn, void *arg)
 
     fn(arg);
 
-    /* TODO Destruction */
-    for (;;) {
-        cpu_idle();
-    }
+    thread_exit();
 }
 
 const char *
@@ -289,6 +294,7 @@ thread_init(struct thread *thread, thread_fn_t fn, void *arg,
     thread->state = THREAD_STATE_RUNNING;
     thread->yield = false;
     thread->preempt_level = 1;
+    thread->joiner = NULL;
     thread_set_name(thread, name);
     thread->stack = stack;
 }
@@ -322,6 +328,54 @@ thread_create(struct thread **threadp, thread_fn_t fn, void *arg,
 
     *threadp = thread;
     return 0;
+}
+
+static void
+thread_destroy(struct thread *thread)
+{
+    assert(thread_is_dead(thread));
+
+    free(thread->stack);
+    free(thread);
+}
+
+void
+thread_exit(void)
+{
+    struct thread *thread;
+
+    thread = thread_self();
+
+    assert(thread_preempt_enabled());
+
+    thread_preempt_disable();
+    cpu_intr_save();
+    assert(thread_is_running(thread));
+    thread_set_dead(thread);
+    thread_wakeup(thread->joiner);
+    thread_runq_schedule(&thread_runq);
+
+    panic("thread: error: dead thread walking");
+}
+
+void
+thread_join(struct thread *thread)
+{
+    uint32_t eflags;
+
+    thread_preempt_disable();
+    eflags = cpu_intr_save();
+
+    thread->joiner = thread_self();
+
+    while (!thread_is_dead(thread)) {
+        thread_sleep();
+    }
+
+    cpu_intr_restore(eflags);
+    thread_preempt_enable();
+
+    thread_destroy(thread);
 }
 
 struct thread *
@@ -413,9 +467,9 @@ thread_sleep(void)
 
     thread = thread_self();
     assert(thread->preempt_level == 1);
-    assert(thread_is_running(thread));
 
     eflags = cpu_intr_save();
+    assert(thread_is_running(thread));
     thread_set_sleeping(thread);
     thread_runq_schedule(&thread_runq);
     assert(thread_is_running(thread));
@@ -427,16 +481,15 @@ thread_wakeup(struct thread *thread)
 {
     uint32_t eflags;
 
-    assert(thread);
-
-    if (thread == thread_self()) {
+    if (!thread || (thread == thread_self())) {
         return;
     }
 
     thread_preempt_disable();
     eflags = cpu_intr_save();
 
-    if (thread_is_sleeping(thread)) {
+    if (!thread_is_running(thread)) {
+        assert(!thread_is_dead(thread));
         thread_set_running(thread);
         thread_runq_add(&thread_runq, thread);
     }

@@ -32,23 +32,24 @@
 #include "thread.h"
 #include "uart.h"
 
-static struct thread *thread1;
-static struct thread *thread2;
+static void
+test1(void *arg)
+{
+    (void)arg;
+
+    printf("exit\n");
+    thread_exit();
+}
 
 static void
-test(void *arg)
+test2(void *arg)
 {
     struct thread *thread;
 
-    (void)arg;
+    thread = arg;
 
-    thread = thread_self();
-
-    for (unsigned int i = 0; /* no condition */; i++) {
-        if ((i % 1000000000) == 0) {
-            printf("%s ", thread_name(thread));
-        }
-    }
+    thread_join(thread);
+    printf("join\n");
 }
 
 /*
@@ -59,6 +60,8 @@ test(void *arg)
 void
 main(void)
 {
+    struct thread *thread1;
+    struct thread *thread2;
     int error;
 
     thread_bootstrap();
@@ -69,13 +72,13 @@ main(void)
     mem_setup();
     thread_setup();
 
-    error = thread_create(&thread1, test, NULL, "test1", 1024);
+    error = thread_create(&thread1, test1, NULL, "test1", 1024);
 
     if (error) {
         panic("main: error: unable to create test1 thread");
     }
 
-    error = thread_create(&thread2, test, NULL, "test2", 1024);
+    error = thread_create(&thread2, test2, thread1, "test2", 1024);
 
     if (error) {
         panic("main: error: unable to create test2 thread");
