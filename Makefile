@@ -118,6 +118,7 @@ SOURCES = \
 	src/io_asm.S \
 	src/main.c \
 	src/mem.c \
+	src/mutex.c \
 	src/panic.c \
 	src/printf.c \
 	src/string.c \

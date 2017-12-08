@@ -21,15 +21,24 @@
  * SOFTWARE.
  */
 
-#ifndef _ERROR_H
-#define _ERROR_H
+#ifndef _MUTEX_H
+#define _MUTEX_H
 
-enum {
-    ERROR_INVAL = 1,
-    ERROR_AGAIN,
-    ERROR_NOMEM,
-    ERROR_IO,
-    ERROR_BUSY,
+#include <stdbool.h>
+
+#include <lib/list.h>
+
+#include "thread.h"
+
+struct mutex {
+    struct list waiters;
+    struct thread *owner;
+    bool locked;
 };
 
-#endif /* _ERROR_H */
+void mutex_init(struct mutex *mutex);
+void mutex_lock(struct mutex *mutex);
+int mutex_trylock(struct mutex *mutex);
+void mutex_unlock(struct mutex *mutex);
+
+#endif /* _MUTEX_H */

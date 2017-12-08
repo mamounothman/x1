@@ -32,24 +32,35 @@
 #include "thread.h"
 #include "uart.h"
 
+#include "mutex.h"
+
+static struct mutex test_mutex;
+static unsigned int test_counter;
+
 static void
-test1(void *arg)
+test(void *arg)
 {
+    unsigned int counter;
+
     (void)arg;
 
-    printf("exit\n");
-    thread_exit();
-}
+    for (;;) {
+        mutex_lock(&test_mutex);
 
-static void
-test2(void *arg)
-{
-    struct thread *thread;
+        counter = test_counter;
+        thread_yield();
+        test_counter++;
 
-    thread = arg;
+        if (test_counter != (counter + 1)) {
+            panic("test: error: invalid counter value");
+        }
 
-    thread_join(thread);
-    printf("join\n");
+        if ((test_counter % 1000000) < 2) {
+            printf("%s ", thread_name(thread_self()));
+        }
+
+        mutex_unlock(&test_mutex);
+    }
 }
 
 /*
@@ -72,13 +83,15 @@ main(void)
     mem_setup();
     thread_setup();
 
-    error = thread_create(&thread1, test1, NULL, "test1", 1024);
+    mutex_init(&test_mutex);
+
+    error = thread_create(&thread1, test, NULL, "test1", 1024);
 
     if (error) {
         panic("main: error: unable to create test1 thread");
     }
 
-    error = thread_create(&thread2, test2, thread1, "test2", 1024);
+    error = thread_create(&thread2, test, NULL, "test2", 1024);
 
     if (error) {
         panic("main: error: unable to create test2 thread");

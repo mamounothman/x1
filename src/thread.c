@@ -499,6 +499,18 @@ thread_wakeup(struct thread *thread)
 }
 
 void
+thread_preempt_disable(void)
+{
+    struct thread *thread;
+
+    thread = thread_self();
+    thread->preempt_level++;
+    assert(thread->preempt_level != 0);
+
+    barrier();
+}
+
+void
 thread_preempt_enable(void)
 {
     struct thread *thread;
@@ -510,18 +522,6 @@ thread_preempt_enable(void)
     thread->preempt_level--;
 
     thread_yield_if_needed();
-}
-
-void
-thread_preempt_disable(void)
-{
-    struct thread *thread;
-
-    thread = thread_self();
-    thread->preempt_level++;
-    assert(thread->preempt_level != 0);
-
-    barrier();
 }
 
 bool
