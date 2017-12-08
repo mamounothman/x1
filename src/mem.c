@@ -131,7 +131,7 @@
 #include <lib/macros.h>
 
 #include "mem.h"
-#include "thread.h"
+#include "mutex.h"
 
 /*
  * Total size of the backing storage heap.
@@ -253,6 +253,11 @@ static char mem_heap[MEM_HEAP_SIZE] __aligned(MEM_ALIGN);
  * and enable more allocation policies, such as instant-fit.
  */
 static struct mem_free_list mem_free_list;
+
+/*
+ * Global mutex used to serialize access to allocation data.
+ */
+static struct mutex mem_mutex;
 
 static bool
 mem_aligned(size_t value)
@@ -593,6 +598,7 @@ mem_setup(void)
     mem_block_init(block, sizeof(mem_heap));
     mem_free_list_init(&mem_free_list);
     mem_free_list_add(&mem_free_list, block);
+    mutex_init(&mem_mutex);
 }
 
 static size_t
@@ -625,12 +631,12 @@ mem_alloc(size_t size)
 
     size = mem_convert_to_block_size(size);
 
-    thread_preempt_disable();
+    mutex_lock(&mem_mutex);
 
     block = mem_free_list_find(&mem_free_list, size);
 
     if (block == NULL) {
-        thread_preempt_enable();
+        mutex_unlock(&mem_mutex);
         return NULL;
     }
 
@@ -641,7 +647,7 @@ mem_alloc(size_t size)
         mem_free_list_add(&mem_free_list, block2);
     }
 
-    thread_preempt_enable();
+    mutex_unlock(&mem_mutex);
 
     ptr = mem_block_payload(block);
     assert(mem_aligned((uintptr_t)ptr));
@@ -662,7 +668,7 @@ mem_free(void *ptr)
     block = mem_block_from_payload(ptr);
     assert(mem_block_inside_heap(block));
 
-    thread_preempt_disable();
+    mutex_lock(&mem_mutex);
 
     mem_free_list_add(&mem_free_list, block);
 
@@ -682,5 +688,5 @@ mem_free(void *ptr)
         mem_block_merge(block, tmp);
     }
 
-    thread_preempt_enable();
+    mutex_unlock(&mem_mutex);
 }
