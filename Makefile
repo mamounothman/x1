@@ -111,6 +111,7 @@ BINARY = x1
 SOURCES = \
 	src/boot_asm.S \
 	src/boot.c \
+	src/condvar.c \
 	src/cpu.c \
 	src/cpu_asm.S \
 	src/i8254.c \
