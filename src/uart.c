@@ -22,11 +22,16 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
+#include <lib/cbuf.h>
+#include <lib/macros.h>
+
 #include "cpu.h"
+#include "error.h"
 #include "io.h"
 #include "uart.h"
 #include "thread.h"
@@ -52,25 +57,40 @@
 #define UART_REG_DIVH           1
 #define UART_REG_LCR            3
 
+#define UART_BUFFER_SIZE        16
+
+#if !ISP2(UART_BUFFER_SIZE)
+#error "invalid buffer size"
+#endif
+
+static uint8_t uart_buffer[UART_BUFFER_SIZE];
+static struct cbuf uart_cbuf;
+static struct thread *uart_waiter;
+
 static void
 uart_irq_handler(void *arg)
 {
     uint8_t byte;
+    int error;
 
     (void)arg;
 
     byte = io_read(UART_COM1_PORT + UART_REG_DAT);
+    error = cbuf_pushb(&uart_cbuf, byte, false);
 
-    printf("%c", byte);
-
-    if (byte == '\r') {
-        printf("\n");
+    if (error) {
+        printf("uart: error: buffer full\n");
+        return;
     }
+
+    thread_wakeup(uart_waiter);
 }
 
 void
 uart_setup(void)
 {
+    cbuf_init(&uart_cbuf, uart_buffer, sizeof(uart_buffer));
+
     io_write(UART_COM1_PORT + UART_REG_LCR, UART_LCR_DLAB);
     io_write(UART_COM1_PORT + UART_REG_DIVL, UART_DIVISOR);
     io_write(UART_COM1_PORT + UART_REG_DIVH, UART_DIVISOR >> 8);
@@ -85,8 +105,39 @@ uart_setup(void)
 void
 uart_write(uint8_t byte)
 {
-    assert(!cpu_intr_enabled());
-    assert(!thread_preempt_enabled());
-
     io_write(UART_COM1_PORT + UART_REG_DAT, byte);
+}
+
+int
+uart_read(uint8_t *byte)
+{
+    int eflags, error;
+
+    thread_preempt_disable();
+    eflags = cpu_intr_save();
+
+    if (uart_waiter) {
+        error = ERROR_BUSY;
+        goto out;
+    }
+
+    for (;;) {
+        error = cbuf_popb(&uart_cbuf, byte);
+
+        if (!error) {
+            break;
+        }
+
+        uart_waiter = thread_self();
+        thread_sleep();
+        uart_waiter = NULL;
+    }
+
+    error = 0;
+
+out:
+    cpu_intr_restore(eflags);
+    thread_preempt_enable();
+
+    return error;
 }

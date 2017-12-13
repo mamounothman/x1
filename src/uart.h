@@ -28,5 +28,6 @@
 
 void uart_setup(void);
 void uart_write(uint8_t byte);
+int uart_read(uint8_t *byte);
 
 #endif /* _UART_H */
