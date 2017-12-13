@@ -326,7 +326,10 @@ thread_create(struct thread **threadp, thread_fn_t fn, void *arg,
     thread_init(thread, fn, arg, name, stack, stack_size);
     thread_runq_add(&thread_runq, thread);
 
-    *threadp = thread;
+    if (threadp) {
+        *threadp = thread;
+    }
+
     return 0;
 }
 
