@@ -22,8 +22,58 @@
  */
 
 #include <stddef.h>
-
 #include <string.h>
+
+#include <lib/macros.h>
+
+void *
+memcpy(void *dest, const void *src, size_t n)
+{
+    const char *src_ptr;
+    char *dest_ptr;
+    size_t i;
+
+    dest_ptr = dest;
+    src_ptr = src;
+
+    for (i = 0; i < n; i++) {
+        *dest_ptr = *src_ptr;
+        dest_ptr++;
+        src_ptr++;
+    }
+
+    return dest;
+}
+
+void *
+memmove(void *dest, const void *src, size_t n)
+{
+    const char *src_ptr;
+    char *dest_ptr;
+    size_t i;
+
+    if (dest <= src) {
+        dest_ptr = dest;
+        src_ptr = src;
+
+        for (i = 0; i < n; i++) {
+            *dest_ptr = *src_ptr;
+            dest_ptr++;
+            src_ptr++;
+        }
+    } else {
+        dest_ptr = dest + n - 1;
+        src_ptr = src + n - 1;
+
+        for (i = 0; i < n; i++) {
+            *dest_ptr = *src_ptr;
+            dest_ptr--;
+            src_ptr--;
+        }
+    }
+
+    return dest;
+}
 
 char *
 strcpy(char *dest, const char *src)
@@ -52,4 +102,43 @@ strlen(const char *s)
     }
 
     return (s - start);
+}
+
+int
+strcmp(const char *s1, const char *s2)
+{
+    char c1, c2;
+
+    while ((c1 = *s1) == (c2 = *s2)) {
+        if (c1 == '\0') {
+            return 0;
+        }
+
+        s1++;
+        s2++;
+    }
+
+    return (int)c1 - (int)c2;
+}
+
+int
+strncmp(const char *s1, const char *s2, size_t n)
+{
+    char c1, c2;
+
+    if (unlikely(n == 0)) {
+        return 0;
+    }
+
+    while ((n != 0) && (c1 = *s1) == (c2 = *s2)) {
+        if (c1 == '\0') {
+            return 0;
+        }
+
+        n--;
+        s1++;
+        s2++;
+    }
+
+    return (int)c1 - (int)c2;
 }
