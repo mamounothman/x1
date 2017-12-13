@@ -127,8 +127,9 @@ SOURCES = \
 	src/uart.c
 
 SOURCES += \
-	lib/cbuf.c
-	lib/fmt.c
+	lib/cbuf.c \
+	lib/fmt.c \
+	lib/shell.c
 
 OBJECTS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SOURCES)))
 

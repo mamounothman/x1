@@ -24,6 +24,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include <lib/shell.h>
+
 #include "cpu.h"
 #include "i8254.h"
 #include "i8259.h"
@@ -31,37 +33,6 @@
 #include "panic.h"
 #include "thread.h"
 #include "uart.h"
-
-#include "mutex.h"
-
-static struct mutex test_mutex;
-static unsigned int test_counter;
-
-static void
-test(void *arg)
-{
-    unsigned int counter;
-
-    (void)arg;
-
-    for (;;) {
-        mutex_lock(&test_mutex);
-
-        counter = test_counter;
-        thread_yield();
-        test_counter++;
-
-        if (test_counter != (counter + 1)) {
-            panic("test: error: invalid counter value");
-        }
-
-        if ((test_counter % 1000000) < 2) {
-            printf("%s ", thread_name(thread_self()));
-        }
-
-        mutex_unlock(&test_mutex);
-    }
-}
 
 /*
  * This function is the main entry point for C code. It's called from
@@ -71,10 +42,6 @@ test(void *arg)
 void
 main(void)
 {
-    struct thread *thread1;
-    struct thread *thread2;
-    int error;
-
     thread_bootstrap();
     cpu_setup();
     i8259_setup();
@@ -82,20 +49,7 @@ main(void)
     uart_setup();
     mem_setup();
     thread_setup();
-
-    mutex_init(&test_mutex);
-
-    error = thread_create(&thread1, test, NULL, "test1", 1024);
-
-    if (error) {
-        panic("main: error: unable to create test1 thread");
-    }
-
-    error = thread_create(&thread2, test, NULL, "test2", 1024);
-
-    if (error) {
-        panic("main: error: unable to create test2 thread");
-    }
+    shell_setup();
 
     printf("Hello, world !\n");
 
