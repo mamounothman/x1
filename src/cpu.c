@@ -305,10 +305,12 @@ cpu_intr_main(struct cpu_intr_frame *frame)
 
     assert(!cpu_intr_enabled());
 
+    thread_preempt_disable();
+
     /* TODO Macros */
     if (frame->vector < 32) {
         /* TODO Handle exceptions */
-        return;
+        goto out;
     }
 
     irq = frame->vector - 32;
@@ -320,11 +322,13 @@ cpu_intr_main(struct cpu_intr_frame *frame)
 
     if (!handler || !handler->fn) {
         printf("cpu: error: invalid handler for irq %u\n", irq);
-        return;
+        goto out;
     }
 
     handler->fn(handler->arg);
-    thread_yield_if_needed();
+
+out:
+    thread_preempt_enable();
 }
 
 void
