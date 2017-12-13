@@ -133,24 +133,24 @@ thread_runq_get_current(struct thread_runq *runq)
     return runq->current;
 }
 
+static void
+thread_runq_put_prev(struct thread_runq *runq, struct thread *thread)
+{
+    list_insert_tail(&runq->threads, &thread->node);
+}
+
 static struct thread *
 thread_runq_get_next(struct thread_runq *runq)
 {
     struct thread *thread;
-    struct list *node;
 
     assert(runq->current);
 
     if (list_empty(&runq->threads)) {
         thread = runq->idle;
     } else {
-        node = list_next(&runq->current->node);
-
-        if (list_end(&runq->threads, node)) {
-            node = list_first(&runq->threads);
-        }
-
-        thread = list_entry(node, struct thread, node);
+        thread = list_first_entry(&runq->threads, struct thread, node);
+        list_remove(&thread->node);
     }
 
     runq->current = thread;
@@ -175,16 +175,6 @@ thread_runq_remove(struct thread_runq *runq, struct thread *thread)
 }
 
 static void
-thread_runq_start(struct thread_runq *runq)
-{
-    if (list_empty(&runq->threads)) {
-        runq->current = runq->idle;
-    } else {
-        runq->current = list_first_entry(&runq->threads, struct thread, node);
-    }
-}
-
-static void
 thread_runq_schedule(struct thread_runq *runq)
 {
     struct thread *prev, *next;
@@ -193,6 +183,8 @@ thread_runq_schedule(struct thread_runq *runq)
 
     assert(!cpu_intr_enabled());
     assert(prev->preempt_level == 1);
+
+    thread_runq_put_prev(runq, prev);
 
     if (!thread_is_running(prev)) {
         thread_runq_remove(runq, prev);
@@ -210,8 +202,7 @@ thread_enable_scheduler(void)
 {
     struct thread *thread;
 
-    thread_runq_start(&thread_runq);
-    thread = thread_runq_get_current(&thread_runq);
+    thread = thread_runq_get_next(&thread_runq);
     assert(thread);
     assert(thread->preempt_level == 1);
     thread_load_context(thread);
