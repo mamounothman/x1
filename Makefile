@@ -37,6 +37,9 @@ CPPFLAGS += -I$(shell $(CC) -print-file-name=include)
 # These are common warning options.
 CFLAGS = -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes
 
+# TODO
+CFLAGS += -Wshadow
+
 # Set the language as C99 with GNU extensions.
 CFLAGS += -std=gnu99
 
