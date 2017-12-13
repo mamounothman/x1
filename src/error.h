@@ -30,6 +30,7 @@ enum {
     ERROR_NOMEM,
     ERROR_IO,
     ERROR_BUSY,
+    ERROR_EXIST,
 };
 
 #endif /* _ERROR_H */
