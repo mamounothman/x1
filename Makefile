@@ -16,26 +16,26 @@ CC = gcc
 # non free, and as a result, the gcc-doc package is part of the non-free
 # components.
 
-# The -I option is used to add directories to the search list.
-X1_CPPFLAGS = -Iinclude -I.
-
 # Generate code for a 32-bits environment.
-X1_CPPFLAGS += -m32
+X1_CPPFLAGS = -m32
 
 # Do not search the standard system directories for header files.
 # The kernel is a free standing environment, where no host library can
 # work, at least not without (usually heavy) integration work.
 X1_CPPFLAGS += -nostdinc
 
-# Pass the project version as a macro.
-X1_CPPFLAGS += -DVERSION="$(VERSION)"
+# The -I option is used to add directories to the search list.
+X1_CPPFLAGS += -Iinclude -I.
 
 # The -print-file-name=include option prints the directory where the compiler
 # headers are located. This directory is normally part of the standard system
 # directories for header files, excluded by the -nostdinc option. But the
 # C free standing environment still assumes the availability of some headers
 # which can be found there.
-X1_CPPFLAGS += -I$(shell $(CC) -print-file-name=include)
+X1_CPPFLAGS += -isystem $(shell $(CC) -print-file-name=include)
+
+# Pass the project version as a macro.
+X1_CPPFLAGS += -DVERSION="$(VERSION)"
 
 # Append user-provided preprocessor flags, if any.
 #
