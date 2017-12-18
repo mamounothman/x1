@@ -24,6 +24,9 @@ CPPFLAGS += -m32
 # work, at least not without (usually heavy) integration work.
 CPPFLAGS += -nostdinc
 
+# Define this macro in order to turn off assertions.
+#CPPFLAGS += -DNDEBUG
+
 # Pass the project version as a macro.
 CPPFLAGS += -DVERSION="$(VERSION)"
 
@@ -56,9 +59,6 @@ CFLAGS += -O2
 # data to work with, e.g. allowing them to translate between addresses and
 # source locations.
 CFLAGS += -g
-
-# Define this macro in order to turn off assertions.
-#CFLAGS += -DNDEBUG
 
 # Target a free standing environment as defined by C99.
 #
