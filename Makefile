@@ -95,11 +95,9 @@ X1_CFLAGS += -fno-common
 # Here are some examples :
 # $ make CFLAGS="-O0 -g3"
 #   Disable optimizations and include extra debugging information
-# $ make CFLAGS="-Os -flto -g0"
-#   Optimize for size, enable LTO (link-time optimizations), and don't
-#   produce debugging information
-# $ make CFLAGS="-fstack-protector-all"
-#   Enable buffer overflow checking for all functions
+# $ make CPPFLAGS=-DNDEBUG CFLAGS="-Os -flto -g0"
+#   Disable assertions, optimize for size, enable LTO (link-time optimizations),
+#   and don't produce debugging information
 #
 # Because these flags are added last, they can override any flag set in this
 # Makefile.
