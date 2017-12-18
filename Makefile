@@ -93,6 +93,9 @@ X1_CFLAGS += -fno-strict-aliasing
 # global variable are made, this option will make the link fail.
 X1_CFLAGS += -fno-common
 
+# Disable all extended intruction sets that require special kernel support.
+X1_CFLAGS += -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx
+
 # Append user-provided compiler flags, if any.
 #
 # Here are some examples :
