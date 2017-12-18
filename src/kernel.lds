@@ -94,7 +94,7 @@ SECTIONS
 
     .data : {
         *(.rodata*)
-        *(.data)
+        *(.data*)
     } > RAM : data
 
     .bss : {
