@@ -36,6 +36,12 @@
 #include "uart.h"
 
 /*
+ * XXX The Clang compiler apparently doesn't like the lack of prototype for
+ * the main function in free standing mode.
+ */
+void main(void);
+
+/*
  * This function is the main entry point for C code. It's called from
  * assembly code in the boot module, very soon after control is passed
  * to the kernel.
