@@ -55,6 +55,9 @@ X1_CFLAGS = -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes
 # TODO
 X1_CFLAGS += -Wshadow
 
+# TODO
+X1_CFLAGS += -Wno-unneeded-internal-declaration
+
 # Set the language as C99 with GNU extensions.
 X1_CFLAGS += -std=gnu99
 
