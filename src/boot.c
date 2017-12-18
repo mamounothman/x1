@@ -27,4 +27,17 @@
 
 #include "boot.h"
 
+/*
+ * This is the boot stack, used by the boot code to set the value of
+ * the ESP register very early once control is passed to the kernel.
+ *
+ * It is aligned to 4 bytes to comply with the System V Intel 386 ABI [1].
+ * While not strictly required since x86 supports unaligned accesses,
+ * aligned accesses are faster, and the compiler generates instructions
+ * accessing the stack that assume it's aligned.
+ *
+ * See the assembly code at the boot_start label in boot_asm.S.
+ *
+ * [1] http://www.sco.com/developers/devspecs/abi386-4.pdf
+ */
 uint8_t boot_stack[BOOT_STACK_SIZE] __aligned(4);

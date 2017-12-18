@@ -24,6 +24,11 @@
 #ifndef _BOOT_H
 #define _BOOT_H
 
+/*
+ * The size of the boot stack.
+ *
+ * See the boot_stack variable in boot.c.
+ */
 #define BOOT_STACK_SIZE 4096
 
 #endif /* _BOOT_H */
