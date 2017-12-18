@@ -343,7 +343,7 @@ thread_exit(void)
     assert(thread_preempt_enabled());
 
     thread_preempt_disable();
-    cpu_intr_save();
+    cpu_intr_disable();
     assert(thread_is_running(thread));
     thread_set_dead(thread);
     thread_wakeup(thread->joiner);
