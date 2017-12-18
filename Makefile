@@ -1,6 +1,9 @@
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 
+# The project version.
+VERSION = 0.1
+
 # The selected C compiler.
 CC = gcc
 
@@ -20,6 +23,9 @@ CPPFLAGS += -m32
 # The kernel is a free standing environment, where no host library can
 # work, at least not without (usually heavy) integration work.
 CPPFLAGS += -nostdinc
+
+# Pass the project version as a macro.
+CPPFLAGS += -DVERSION="$(VERSION)"
 
 # The -print-file-name=include option prints the directory where the compiler
 # headers are located. This directory is normally part of the standard system

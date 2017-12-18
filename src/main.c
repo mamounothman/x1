@@ -24,6 +24,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include <lib/macros.h>
 #include <lib/shell.h>
 
 #include "cpu.h"
@@ -51,7 +52,7 @@ main(void)
     thread_setup();
     shell_setup();
 
-    printf("Hello, world !\n");
+    printf("X1 " QUOTE(VERSION) "\n\n");
 
     thread_enable_scheduler();
 
