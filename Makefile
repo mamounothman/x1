@@ -5,6 +5,9 @@ MAKEFLAGS += --no-builtin-variables
 VERSION = 0.1
 
 # The selected C compiler.
+#
+# Here is an example of overriding the compiler :
+# $ make CC=clang
 CC = gcc
 
 # C preprocessor flags.
@@ -14,28 +17,31 @@ CC = gcc
 # components.
 
 # The -I option is used to add directories to the search list.
-CPPFLAGS = -Iinclude -I.
+X1_CPPFLAGS = -Iinclude -I.
 
 # Generate code for a 32-bits environment.
-CPPFLAGS += -m32
+X1_CPPFLAGS += -m32
 
 # Do not search the standard system directories for header files.
 # The kernel is a free standing environment, where no host library can
 # work, at least not without (usually heavy) integration work.
-CPPFLAGS += -nostdinc
-
-# Define this macro in order to turn off assertions.
-#CPPFLAGS += -DNDEBUG
+X1_CPPFLAGS += -nostdinc
 
 # Pass the project version as a macro.
-CPPFLAGS += -DVERSION="$(VERSION)"
+X1_CPPFLAGS += -DVERSION="$(VERSION)"
 
 # The -print-file-name=include option prints the directory where the compiler
 # headers are located. This directory is normally part of the standard system
 # directories for header files, excluded by the -nostdinc option. But the
 # C free standing environment still assumes the availability of some headers
 # which can be found there.
-CPPFLAGS += -I$(shell $(CC) -print-file-name=include)
+X1_CPPFLAGS += -I$(shell $(CC) -print-file-name=include)
+
+# Append user-provided preprocessor flags, if any.
+#
+# Here is an example that turns off assertions :
+# $ make CPPFLAGS=-DNDEBUG
+X1_CPPFLAGS += $(CPPFLAGS)
 
 # C flags.
 #
@@ -44,21 +50,21 @@ CPPFLAGS += -I$(shell $(CC) -print-file-name=include)
 # components.
 
 # These are common warning options.
-CFLAGS = -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes
+X1_CFLAGS = -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes
 
 # TODO
-CFLAGS += -Wshadow
+X1_CFLAGS += -Wshadow
 
 # Set the language as C99 with GNU extensions.
-CFLAGS += -std=gnu99
+X1_CFLAGS += -std=gnu99
 
 # Build with optimizations as specified by the -O2 option.
-CFLAGS += -O2
+X1_CFLAGS += -O2
 
 # Include debugging symbols, giving inspection tools a lot more debugging
 # data to work with, e.g. allowing them to translate between addresses and
 # source locations.
-CFLAGS += -g
+X1_CFLAGS += -g
 
 # Target a free standing environment as defined by C99.
 #
@@ -66,23 +72,38 @@ CFLAGS += -g
 # e.g. that it cannot assume the availability of the C library.
 #
 # See ISO/IEC 9899:1999 5.1.2.1 "Freestanding environment" for all the details.
-CFLAGS += -ffreestanding
+X1_CFLAGS += -ffreestanding
 
 # Disable the generation of extra code for stack protection, as it requires
 # additional support in the kernel which is beyond its scope, and may be
 # enabled by default on some distributions.
-CFLAGS += -fno-stack-protector
+X1_CFLAGS += -fno-stack-protector
 
 # Disable strict aliasing, a C99 rule that states that pointers of different
 # types may never refer to the same memory. Strict aliasing may provide
 # performance improvements for some rare cases but may also cause weird bugs
 # when casting pointers.
-CFLAGS += -fno-strict-aliasing
+X1_CFLAGS += -fno-strict-aliasing
 
 # Force all uninitialized global variables into a data section instead of
 # generating them as "common blocks". If multiple definitions of the same
 # global variable are made, this option will make the link fail.
-CFLAGS += -fno-common
+X1_CFLAGS += -fno-common
+
+# Append user-provided compiler flags, if any.
+#
+# Here are some examples :
+# $ make CFLAGS="-O0 -g3"
+#   Disable optimizations and include extra debugging information
+# $ make CFLAGS="-Os -flto -g0"
+#   Optimize for size, enable LTO (link-time optimizations), and don't
+#   produce debugging information
+# $ make CFLAGS="-fstack-protector-all"
+#   Enable buffer overflow checking for all functions
+#
+# Because these flags are added last, they can override any flag set in this
+# Makefile.
+X1_CFLAGS += $(CFLAGS)
 
 # Linker flags.
 #
@@ -91,23 +112,26 @@ CFLAGS += -fno-common
 # package is part of the non-free components.
 
 # Link for a 32-bits environment.
-LDFLAGS = -m32
+X1_LDFLAGS = -m32
 
 # Build a static executable, with no shared library.
-LDFLAGS += -static
+X1_LDFLAGS += -static
 
 # Do not use the standard system startup files or libraries when linking.
 # The kernel is a free standing environment, where no host library can
 # work, at least not without (usually heavy) integration work.
-LDFLAGS += -nostdlib
+X1_LDFLAGS += -nostdlib
 
 # Disable the generation of a build ID, a feature usually enabled by default
 # on many distributions. A build ID is linked in its own special section, so
 # disabling it makes the linker script simpler.
-LDFLAGS += -Xlinker --build-id=none
+X1_LDFLAGS += -Xlinker --build-id=none
 
 # Pass the linker script path to the linker.
-LDFLAGS += -Xlinker -T src/kernel.lds
+X1_LDFLAGS += -Xlinker -T src/kernel.lds
+
+# Append user-provided linker flags, if any.
+X1_LDFLAGS += $(LDFLAGS)
 
 # Link against libgcc. This library is a companion to the compiler and
 # adds support for operations required by C99 but that the hardware
@@ -144,13 +168,13 @@ SOURCES += \
 OBJECTS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SOURCES)))
 
 $(BINARY): $(OBJECTS)
-	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+	$(CC) -o $@ $(X1_LDFLAGS) $^ $(LIBS)
 
 %.o: %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(X1_CPPFLAGS) $(X1_CFLAGS) -c -o $@ $<
 
 %.o: %.S
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(X1_CPPFLAGS) $(X1_CFLAGS) -c -o $@ $<
 
 clean:
 	rm -f $(BINARY) $(OBJECTS)
