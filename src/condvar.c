@@ -63,15 +63,16 @@ condvar_waiter_awaken(const struct condvar_waiter *waiter)
     return waiter->awaken;
 }
 
-static void
+static bool
 condvar_waiter_wakeup(struct condvar_waiter *waiter)
 {
     if (condvar_waiter_awaken(waiter)) {
-        return;
+        return false;
     }
 
     thread_wakeup(waiter->thread);
     waiter->awaken = true;
+    return true;
 }
 
 void
@@ -84,14 +85,16 @@ void
 condvar_signal(struct condvar *condvar)
 {
     struct condvar_waiter *waiter;
-    struct list *first;
+    bool awaken;
 
     thread_preempt_disable();
 
-    if (!list_empty(&condvar->waiters)) {
-        first = list_first(&condvar->waiters);
-        waiter = list_entry(first, struct condvar_waiter, node);
-        condvar_waiter_wakeup(waiter);
+    list_for_each_entry(&condvar->waiters, waiter, node) {
+        awaken = condvar_waiter_wakeup(waiter);
+
+        if (awaken) {
+            break;
+        }
     }
 
     thread_preempt_enable();

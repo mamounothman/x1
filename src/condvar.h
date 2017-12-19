@@ -59,8 +59,8 @@ void condvar_init(struct condvar *condvar);
 /*
  * Signal a condition variable.
  *
- * If a thread is waiting on the given condition variable, it is awaken.
- * At most one thread may be awaken.
+ * At least one thread is awaken if any threads are waiting on the
+ * condition variable.
  *
  * Signalling a condition variable is always safe in the sense that
  * it is permitted and won't make the system crash, but signals may be
