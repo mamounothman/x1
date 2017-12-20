@@ -27,6 +27,8 @@
 #ifndef _TIMER_H
 #define _TIMER_H
 
+#include <stdbool.h>
+
 #include <lib/list.h>
 
 struct timer;
@@ -42,6 +44,9 @@ struct timer {
     timer_fn_t fn;
     void *arg;
 };
+
+bool timer_ticks_expired(unsigned long ticks, unsigned long ref);
+bool timer_ticks_occurred(unsigned long ticks, unsigned long ref);
 
 /*
  * Initialize the timer module.

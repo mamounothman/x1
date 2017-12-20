@@ -49,13 +49,13 @@ static struct mutex timer_mutex;
 
 static struct thread *timer_thread;
 
-static bool
+bool
 timer_ticks_expired(unsigned long ticks, unsigned long ref)
 {
     return (ticks - ref) > TIMER_THRESHOLD;
 }
 
-static bool
+bool
 timer_ticks_occurred(unsigned long ticks, unsigned long ref)
 {
     return (ticks == ref) || timer_ticks_expired(ticks, ref);

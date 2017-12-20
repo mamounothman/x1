@@ -27,6 +27,7 @@
 #include <lib/macros.h>
 #include <lib/shell.h>
 
+#include "condvar.h"
 #include "mutex.h"
 #include "panic.h"
 #include "sw.h"
@@ -38,10 +39,18 @@
  */
 #define SW_DISPLAY_INTERVAL 5
 
+/*
+ * Maximum wait time for the sw_wait command.
+ */
+#define SW_MAX_WAIT 30
+
 static struct mutex sw_mutex;
+static struct condvar sw_cv;
 static struct timer sw_timer;
 static unsigned long sw_ticks;
 static bool sw_timer_scheduled;
+static bool sw_shell_waiting;
+static unsigned long sw_wait_ticks;
 
 static void
 sw_timer_run(void *arg)
@@ -58,6 +67,11 @@ sw_timer_run(void *arg)
 
     if ((sw_ticks % (THREAD_SCHED_FREQ * SW_DISPLAY_INTERVAL)) == 0) {
         printf("%lu\n", sw_ticks);
+    }
+
+    if (sw_shell_waiting && timer_ticks_occurred(sw_wait_ticks, sw_ticks)) {
+        sw_shell_waiting = false;
+        condvar_signal(&sw_cv);
     }
 
     /* TODO Discuss drift */
@@ -123,6 +137,45 @@ sw_read(int argc, char **argv)
     mutex_unlock(&sw_mutex);
 }
 
+static void
+sw_wait(int argc, char **argv)
+{
+    unsigned long seconds;
+    int ret;
+
+    if (argc != 2) {
+        goto error;
+    }
+
+    ret = sscanf(argv[1], "%lu", &seconds);
+
+    if ((ret != 1) || (seconds > SW_MAX_WAIT)) {
+        goto error;
+    }
+
+    mutex_lock(&sw_mutex);
+
+    if (!sw_timer_scheduled) {
+        printf("sw_wait: error: stopwatch disabled\n");
+        goto out;
+    }
+
+    sw_shell_waiting = true;
+    sw_wait_ticks = sw_ticks + (seconds * THREAD_SCHED_FREQ);
+
+    do {
+        condvar_wait(&sw_cv, &sw_mutex);
+    } while (sw_shell_waiting);
+
+out:
+    mutex_unlock(&sw_mutex);
+
+    return;
+
+error:
+    printf("sw_wait: error: invalid arguments\n");
+}
+
 static struct shell_cmd shell_cmds[] = {
     SHELL_CMD_INITIALIZER("sw_start", sw_start,
         "sw_start",
@@ -136,6 +189,9 @@ static struct shell_cmd shell_cmds[] = {
     SHELL_CMD_INITIALIZER("sw_read", sw_read,
         "sw_read",
         "read the stopwatch time"),
+    SHELL_CMD_INITIALIZER("sw_wait", sw_wait,
+        "sw_wait <seconds>",
+        "wait for up to " QUOTE(SW_MAX_WAIT) " seconds"),
 };
 
 void
@@ -144,8 +200,10 @@ sw_setup(void)
     int error;
 
     mutex_init(&sw_mutex);
+    condvar_init(&sw_cv);
     timer_init(&sw_timer, sw_timer_run, NULL);
     sw_timer_scheduled = false;
+    sw_shell_waiting = false;
 
     for (size_t i = 0; i < ARRAY_SIZE(shell_cmds); i++) {
         error = shell_cmd_register(&shell_cmds[i]);
