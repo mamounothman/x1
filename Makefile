@@ -160,6 +160,7 @@ SOURCES = \
 	src/panic.c \
 	src/printf.c \
 	src/string.c \
+	src/sw.c \
 	src/thread_asm.S \
 	src/thread.c \
 	src/timer.c \
