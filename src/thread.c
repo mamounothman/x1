@@ -162,6 +162,9 @@ static void
 thread_runq_add(struct thread_runq *runq, struct thread *thread)
 {
     assert(thread_is_running(thread));
+
+    /* TODO Assert that interrupts and preemption are disabled */
+
     list_insert_head(&runq->threads, &thread->node);
     thread_set_yield(runq->current);
 }
