@@ -161,9 +161,9 @@ thread_runq_get_next(struct thread_runq *runq)
 static void
 thread_runq_add(struct thread_runq *runq, struct thread *thread)
 {
+    assert(!cpu_intr_enabled());
+    assert(!thread_preempt_enabled());
     assert(thread_is_running(thread));
-
-    /* TODO Assert that interrupts and preemption are disabled */
 
     list_insert_head(&runq->threads, &thread->node);
     thread_set_yield(runq->current);
@@ -300,6 +300,7 @@ thread_create(struct thread **threadp, thread_fn_t fn, void *arg,
               const char *name, size_t stack_size)
 {
     struct thread *thread;
+    uint32_t eflags;
     void *stack;
 
     assert(fn);
@@ -320,7 +321,12 @@ thread_create(struct thread **threadp, thread_fn_t fn, void *arg,
     }
 
     thread_init(thread, fn, arg, name, stack, stack_size);
+
+    thread_preempt_disable();
+    eflags = cpu_intr_save();
     thread_runq_add(&thread_runq, thread);
+    cpu_intr_restore(eflags);
+    thread_preempt_enable();
 
     if (threadp) {
         *threadp = thread;
