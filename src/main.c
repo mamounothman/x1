@@ -33,6 +33,7 @@
 #include "mem.h"
 #include "panic.h"
 #include "thread.h"
+#include "timer.h"
 #include "uart.h"
 
 /*
@@ -40,6 +41,95 @@
  * the main function in free standing mode.
  */
 void main(void);
+
+/* TODO External stopwatch module */
+/* TODO Mutual exclusion */
+static struct timer sw_timer;
+static unsigned long sw_time;
+static bool sw_timer_scheduled;
+
+static void
+sw_timer_run(void *arg)
+{
+    unsigned long ticks;
+
+    (void)arg;
+
+    if (!sw_timer_scheduled) {
+        return;
+    }
+
+    sw_time++;
+    ticks = timer_get_time(&sw_timer);
+
+    if ((ticks % THREAD_SCHED_FREQ) == 0) {
+        printf("%lu\n", sw_time);
+    }
+
+    /* TODO Discuss drift */
+    timer_schedule(&sw_timer, timer_get_time(&sw_timer) + 1);
+}
+
+static void
+sw_start(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+
+    if (sw_timer_scheduled) {
+        printf("sw: error: timer already scheduled\n");
+        return;
+    }
+
+    sw_time = 0;
+    sw_timer_scheduled = true;
+
+    /* TODO Discuss resolution */
+    timer_schedule(&sw_timer, timer_now() + 1);
+}
+
+static void
+sw_stop(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+
+    sw_timer_scheduled = false;
+}
+
+static void
+sw_resume(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+
+    sw_timer_scheduled = true;
+    timer_schedule(&sw_timer, timer_now() + 1);
+}
+
+static void
+sw_read(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+
+    printf("sw_time: %lu\n", sw_time);
+}
+
+static struct shell_cmd shell_cmds[] = {
+    SHELL_CMD_INITIALIZER("sw_start", sw_start,
+        "sw_start",
+        "start the stopwatch"),
+    SHELL_CMD_INITIALIZER("sw_stop", sw_stop,
+        "sw_stop",
+        "stop the stopwatch"),
+    SHELL_CMD_INITIALIZER("sw_resume", sw_resume,
+        "sw_resume",
+        "resume the stopwatch"),
+    SHELL_CMD_INITIALIZER("sw_read", sw_read,
+        "sw_read",
+        "read the stopwatch time"),
+};
 
 /*
  * This function is the main entry point for C code. It's called from
@@ -49,6 +139,8 @@ void main(void);
 void
 main(void)
 {
+    int error;
+
     thread_bootstrap();
     cpu_setup();
     i8259_setup();
@@ -56,7 +148,19 @@ main(void)
     uart_setup();
     mem_setup();
     thread_setup();
+    timer_setup();
     shell_setup();
+
+    timer_init(&sw_timer, sw_timer_run, NULL);
+    sw_timer_scheduled = false;
+
+    for (size_t i = 0; i < ARRAY_SIZE(shell_cmds); i++) {
+        error = shell_cmd_register(&shell_cmds[i]);
+
+        if (error) {
+            panic("unable to register shell command");
+        }
+    }
 
     printf("X1 " QUOTE(VERSION) "\n\n");
 

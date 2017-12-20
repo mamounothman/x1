@@ -34,6 +34,7 @@
 #include "error.h"
 #include "panic.h"
 #include "thread.h"
+#include "timer.h"
 
 #define THREAD_STACK_MIN_SIZE 512
 
@@ -193,6 +194,7 @@ thread_runq_schedule(struct thread_runq *runq)
     next = thread_runq_get_next(runq);
 
     if (prev != next) {
+        /* TODO Explain how this acts as a compiler barrier */
         thread_switch_context(prev, next);
     }
 }
@@ -531,4 +533,5 @@ void
 thread_report_tick(void)
 {
     thread_set_yield(thread_self());
+    timer_report_tick();
 }

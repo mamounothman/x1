@@ -162,6 +162,7 @@ SOURCES = \
 	src/string.c \
 	src/thread_asm.S \
 	src/thread.c \
+	src/timer.c \
 	src/uart.c
 
 SOURCES += \
