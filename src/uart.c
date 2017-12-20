@@ -105,6 +105,7 @@ uart_setup(void)
 void
 uart_write(uint8_t byte)
 {
+    /* TODO Check the output buffer */
     io_write(UART_COM1_PORT + UART_REG_DAT, byte);
 }
 
