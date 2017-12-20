@@ -128,6 +128,27 @@ thread_clear_yield(struct thread *thread)
     thread->yield = false;
 }
 
+static bool
+thread_scheduler_locked(void)
+{
+    return !cpu_intr_enabled() && !thread_preempt_enabled();
+}
+
+static uint32_t
+thread_lock_scheduler(void)
+{
+    /* TODO Explain order */
+    thread_preempt_disable();
+    return cpu_intr_save();
+}
+
+static void
+thread_unlock_scheduler(uint32_t eflags)
+{
+    cpu_intr_restore(eflags);
+    thread_preempt_enable();
+}
+
 static struct thread *
 thread_runq_get_current(struct thread_runq *runq)
 {
@@ -161,8 +182,7 @@ thread_runq_get_next(struct thread_runq *runq)
 static void
 thread_runq_add(struct thread_runq *runq, struct thread *thread)
 {
-    assert(!cpu_intr_enabled());
-    assert(!thread_preempt_enabled());
+    assert(thread_scheduler_locked());
     assert(thread_is_running(thread));
 
     list_insert_head(&runq->threads, &thread->node);
@@ -185,7 +205,7 @@ thread_runq_schedule(struct thread_runq *runq)
 
     prev = thread_runq_get_current(runq);
 
-    assert(!cpu_intr_enabled());
+    assert(thread_scheduler_locked());
     assert(prev->preempt_level == 1);
 
     thread_runq_put_prev(runq, prev);
@@ -220,7 +240,7 @@ thread_main(thread_fn_t fn, void *arg)
 {
     assert(fn);
 
-    assert(!cpu_intr_enabled());
+    assert(thread_scheduler_locked());
     assert(thread_self()->preempt_level == 1);
 
     cpu_intr_enable();
@@ -322,11 +342,9 @@ thread_create(struct thread **threadp, thread_fn_t fn, void *arg,
 
     thread_init(thread, fn, arg, name, stack, stack_size);
 
-    thread_preempt_disable();
-    eflags = cpu_intr_save();
+    eflags = thread_lock_scheduler();
     thread_runq_add(&thread_runq, thread);
-    cpu_intr_restore(eflags);
-    thread_preempt_enable();
+    thread_unlock_scheduler(eflags);
 
     if (threadp) {
         *threadp = thread;
@@ -353,8 +371,7 @@ thread_exit(void)
 
     assert(thread_preempt_enabled());
 
-    thread_preempt_disable();
-    cpu_intr_disable();
+    thread_lock_scheduler();
     assert(thread_is_running(thread));
     thread_set_dead(thread);
     thread_wakeup(thread->joiner);
@@ -368,8 +385,7 @@ thread_join(struct thread *thread)
 {
     uint32_t eflags;
 
-    thread_preempt_disable();
-    eflags = cpu_intr_save();
+    eflags = thread_lock_scheduler();
 
     thread->joiner = thread_self();
 
@@ -377,8 +393,7 @@ thread_join(struct thread *thread)
         thread_sleep();
     }
 
-    cpu_intr_restore(eflags);
-    thread_preempt_enable();
+    thread_unlock_scheduler(eflags);
 
     thread_destroy(thread);
 }
@@ -447,13 +462,10 @@ thread_yield(void)
         return;
     }
 
-    /* TODO Explain order */
-    thread_preempt_disable();
-    eflags = cpu_intr_save();
+    eflags = thread_lock_scheduler();
     thread_clear_yield(thread_self());
     thread_runq_schedule(&thread_runq);
-    cpu_intr_restore(eflags);
-    thread_preempt_enable();
+    thread_unlock_scheduler(eflags);
 }
 
 void
@@ -471,7 +483,6 @@ thread_sleep(void)
     uint32_t eflags;
 
     thread = thread_self();
-    assert(thread->preempt_level == 1);
 
     eflags = cpu_intr_save();
     assert(thread_is_running(thread));
@@ -490,8 +501,7 @@ thread_wakeup(struct thread *thread)
         return;
     }
 
-    thread_preempt_disable();
-    eflags = cpu_intr_save();
+    eflags = thread_lock_scheduler();
 
     if (!thread_is_running(thread)) {
         assert(!thread_is_dead(thread));
@@ -499,8 +509,7 @@ thread_wakeup(struct thread *thread)
         thread_runq_add(&thread_runq, thread);
     }
 
-    cpu_intr_restore(eflags);
-    thread_preempt_enable();
+    thread_unlock_scheduler(eflags);
 }
 
 void
