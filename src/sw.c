@@ -82,7 +82,7 @@ out:
 }
 
 static void
-sw_start(int argc, char **argv)
+sw_shell_start(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -104,7 +104,7 @@ out:
 }
 
 static void
-sw_stop(int argc, char **argv)
+sw_shell_stop(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -115,7 +115,7 @@ sw_stop(int argc, char **argv)
 }
 
 static void
-sw_resume(int argc, char **argv)
+sw_shell_resume(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -127,7 +127,7 @@ sw_resume(int argc, char **argv)
 }
 
 static void
-sw_read(int argc, char **argv)
+sw_shell_read(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -138,7 +138,7 @@ sw_read(int argc, char **argv)
 }
 
 static void
-sw_wait(int argc, char **argv)
+sw_shell_wait(int argc, char **argv)
 {
     unsigned long seconds;
     int ret;
@@ -177,19 +177,19 @@ error:
 }
 
 static struct shell_cmd shell_cmds[] = {
-    SHELL_CMD_INITIALIZER("sw_start", sw_start,
+    SHELL_CMD_INITIALIZER("sw_start", sw_shell_start,
         "sw_start",
         "start the stopwatch"),
-    SHELL_CMD_INITIALIZER("sw_stop", sw_stop,
+    SHELL_CMD_INITIALIZER("sw_stop", sw_shell_stop,
         "sw_stop",
         "stop the stopwatch"),
-    SHELL_CMD_INITIALIZER("sw_resume", sw_resume,
+    SHELL_CMD_INITIALIZER("sw_resume", sw_shell_resume,
         "sw_resume",
         "resume the stopwatch"),
-    SHELL_CMD_INITIALIZER("sw_read", sw_read,
+    SHELL_CMD_INITIALIZER("sw_read", sw_shell_read,
         "sw_read",
         "read the stopwatch time"),
-    SHELL_CMD_INITIALIZER("sw_wait", sw_wait,
+    SHELL_CMD_INITIALIZER("sw_wait", sw_shell_wait,
         "sw_wait <seconds>",
         "wait for up to " QUOTE(SW_MAX_WAIT) " seconds"),
 };
