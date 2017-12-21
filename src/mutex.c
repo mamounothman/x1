@@ -97,16 +97,17 @@ mutex_lock(struct mutex *mutex)
 
     thread_preempt_disable();
 
-    if (unlikely(mutex->locked)) {
+    if (mutex->locked) {
         struct mutex_waiter waiter;
 
-        /* TODO Explain order */
         mutex_waiter_init(&waiter, thread);
         list_insert_tail(&mutex->waiters, &waiter.node);
 
         do {
             thread_sleep();
         } while (mutex->locked);
+
+        list_remove(&waiter.node);
     }
 
     mutex_set_owner(mutex, thread);
@@ -121,7 +122,7 @@ mutex_trylock(struct mutex *mutex)
 
     thread_preempt_disable();
 
-    if (unlikely(mutex->locked)) {
+    if (mutex->locked) {
         error = ERROR_BUSY;
     } else {
         error = 0;
@@ -144,7 +145,6 @@ mutex_unlock(struct mutex *mutex)
 
     if (!list_empty(&mutex->waiters)) {
         waiter = list_first_entry(&mutex->waiters, struct mutex_waiter, node);
-        list_remove(&waiter->node);
         mutex_waiter_wakeup(waiter);
     }
 
