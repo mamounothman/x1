@@ -22,8 +22,9 @@
  *
  *
  * Condition variable module.
+ * TODO Explain what a condition variable is and is for.
  *
- * This implementation of condition variables closely matches the core
+ * This interface of condition variables closely matches the core
  * requirements of the POSIX specification [1]. In particular, a condition
  * variable must always be associated with a mutex, and waiting on a
  * condition variable must always be done in a loop rechecking the

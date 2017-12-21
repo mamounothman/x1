@@ -32,6 +32,18 @@
 #include "mutex.h"
 #include "thread.h"
 
+/*
+ * Structure used to bind a waiting thread and a mutex.
+ *
+ * The purpose of this structure is to avoid adding the node to the thread
+ * structure. Instead, it's allocated from the stack and only exists while
+ * the thread is waiting for the mutex to be unlocked.
+ *
+ * When the owner unlocks the mutex, it finds threads to wake up by
+ * accessing the mutex list of waiters.
+ *
+ * Preemption must be disabled when accessing a waiter.
+ */
 struct mutex_waiter {
     struct list node;
     struct thread *thread;
