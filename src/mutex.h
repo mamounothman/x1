@@ -23,9 +23,6 @@
  *
  * Mutex module.
  *
- * This mutex interface matches the "fast" kind of POSIX mutexes. In
- * particular, a mutex cannot be locked recursively.
- *
  * A mutex is a thread synchronization tool that provides mutual exclusion.
  * The code between locking and unlocking a mutex forms a critical section
  * that only one thread may be running at a time. This is true for all
@@ -112,6 +109,9 @@
  * when critical sections are noticeably more expensive than the overhead
  * of locking. Another parameter is whether or not the critical section
  * must remain preemptible.
+ *
+ * This mutex interface matches the "fast" kind of POSIX mutexes. In
+ * particular, a mutex cannot be locked recursively.
  */
 
 #ifndef _MUTEX_H

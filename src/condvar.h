@@ -22,7 +22,12 @@
  *
  *
  * Condition variable module.
- * TODO Explain what a condition variable is and is for.
+ *
+ * A condition variable is a thread synchronization tool used to wait until
+ * a predicate, in the form of data shared between multiple threads, becomes
+ * true. One or more thread may be waiting on a condition variable for the
+ * predicate to become true, and other threads may set the predicate and
+ * signal the condition variable, waking up one or all the waiters.
  *
  * This interface of condition variables closely matches the core
  * requirements of the POSIX specification [1]. In particular, a condition
