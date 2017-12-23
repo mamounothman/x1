@@ -52,6 +52,7 @@ void thread_yield_if_needed(void);
 void thread_sleep(void);
 void thread_wakeup(struct thread *thread);
 
+void thread_preempt_enable_no_yield(void);
 void thread_preempt_enable(void);
 void thread_preempt_disable(void);
 bool thread_preempt_enabled(void);
