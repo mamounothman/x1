@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <lib/macros.h>
 #include <lib/list.h>
 
 #include "cpu.h"
@@ -36,11 +37,14 @@
 #include "thread.h"
 #include "timer.h"
 
-#define THREAD_STACK_MIN_SIZE 512
+struct thread_list {
+    struct list threads;
+};
 
 struct thread_runq {
     struct thread *current;
-    struct list threads;
+    unsigned int nr_threads;
+    struct thread_list lists[THREAD_NR_PRIORITIES];
     struct thread *idle;
 };
 
@@ -56,6 +60,7 @@ struct thread {
     bool yield;
     struct list node;
     unsigned int preempt_level;
+    unsigned int priority;
     struct thread *joiner;
     char name[THREAD_NAME_MAX_SIZE];
     void *stack;
@@ -128,6 +133,18 @@ thread_clear_yield(struct thread *thread)
     thread->yield = false;
 }
 
+static unsigned int
+thread_get_priority(struct thread *thread)
+{
+    return thread->priority;
+}
+
+static void
+thread_remove_from_list(struct thread *thread)
+{
+    list_remove(&thread->node);
+}
+
 static bool
 thread_scheduler_locked(void)
 {
@@ -154,6 +171,41 @@ thread_unlock_scheduler(uint32_t eflags, bool yield)
     }
 }
 
+static void
+thread_list_init(struct thread_list *list)
+{
+    list_init(&list->threads);
+}
+
+static void
+thread_list_enqueue(struct thread_list *list, struct thread *thread)
+{
+    list_insert_tail(&list->threads, &thread->node);
+}
+
+static struct thread *
+thread_list_dequeue(struct thread_list *list)
+{
+    struct thread *thread;
+
+    thread = list_first_entry(&list->threads, typeof(*thread), node);
+    thread_remove_from_list(thread);
+    return thread;
+}
+
+static bool
+thread_list_empty(struct thread_list *list)
+{
+    return list_empty(&list->threads);
+}
+
+static struct thread_list *
+thread_runq_get_list(struct thread_runq *runq, unsigned int priority)
+{
+    assert(priority < ARRAY_SIZE(runq->lists));
+    return &runq->lists[priority];
+}
+
 static struct thread *
 thread_runq_get_current(struct thread_runq *runq)
 {
@@ -163,7 +215,14 @@ thread_runq_get_current(struct thread_runq *runq)
 static void
 thread_runq_put_prev(struct thread_runq *runq, struct thread *thread)
 {
-    list_insert_tail(&runq->threads, &thread->node);
+    struct thread_list *list;
+
+    if (thread == runq->idle) {
+        return;
+    }
+
+    list = thread_runq_get_list(runq, thread_get_priority(thread));
+    thread_list_enqueue(list, thread);
 }
 
 static struct thread *
@@ -173,11 +232,24 @@ thread_runq_get_next(struct thread_runq *runq)
 
     assert(runq->current);
 
-    if (list_empty(&runq->threads)) {
+    if (runq->nr_threads == 0) {
         thread = runq->idle;
     } else {
-        thread = list_first_entry(&runq->threads, struct thread, node);
-        list_remove(&thread->node);
+        struct thread_list *list;
+        size_t nr_lists;
+
+        nr_lists = ARRAY_SIZE(runq->lists);
+
+        /* TODO Explain condition */
+        for (size_t i = (nr_lists - 1); i < nr_lists; i--) {
+            list = thread_runq_get_list(runq, i);
+
+            if (!thread_list_empty(list)) {
+                break;
+            }
+        }
+
+        thread = thread_list_dequeue(list);
     }
 
     runq->current = thread;
@@ -187,20 +259,30 @@ thread_runq_get_next(struct thread_runq *runq)
 static void
 thread_runq_add(struct thread_runq *runq, struct thread *thread)
 {
+    struct thread_list *list;
+
     assert(thread_scheduler_locked());
     assert(thread_is_running(thread));
 
-    list_insert_head(&runq->threads, &thread->node);
-    thread_set_yield(runq->current);
+    list = thread_runq_get_list(runq, thread_get_priority(thread));
+    thread_list_enqueue(list, thread);
+
+    runq->nr_threads++;
+    assert(runq->nr_threads != 0);
+
+    if (thread_get_priority(thread) > thread_get_priority(runq->current)) {
+        thread_set_yield(runq->current);
+    }
 }
 
 static void
 thread_runq_remove(struct thread_runq *runq, struct thread *thread)
 {
-    (void)runq;
+    assert(runq->nr_threads != 0);
+    runq->nr_threads--;
 
     assert(!thread_is_running(thread));
-    list_remove(&thread->node);
+    thread_remove_from_list(thread);
 }
 
 static void
@@ -304,7 +386,8 @@ thread_stack_forge(char *stack_addr, size_t stack_size,
 
 static void
 thread_init(struct thread *thread, thread_fn_t fn, void *arg,
-            const char *name, char *stack, size_t stack_size)
+            const char *name, char *stack, size_t stack_size,
+            unsigned int priority)
 {
     /* TODO Describe the preempted state */
 
@@ -315,6 +398,7 @@ thread_init(struct thread *thread, thread_fn_t fn, void *arg,
     thread->state = THREAD_STATE_RUNNING;
     thread->yield = false;
     thread->preempt_level = 1;
+    thread->priority = priority;
     thread->joiner = NULL;
     thread_set_name(thread, name);
     thread->stack = stack;
@@ -322,7 +406,7 @@ thread_init(struct thread *thread, thread_fn_t fn, void *arg,
 
 int
 thread_create(struct thread **threadp, thread_fn_t fn, void *arg,
-              const char *name, size_t stack_size)
+              const char *name, size_t stack_size, unsigned int priority)
 {
     struct thread *thread;
     uint32_t eflags;
@@ -345,7 +429,7 @@ thread_create(struct thread **threadp, thread_fn_t fn, void *arg,
         return ERROR_NOMEM;
     }
 
-    thread_init(thread, fn, arg, name, stack, stack_size);
+    thread_init(thread, fn, arg, name, stack, stack_size, priority);
 
     eflags = thread_lock_scheduler();
     thread_runq_add(&thread_runq, thread);
@@ -428,21 +512,26 @@ thread_create_idle(void)
     }
 
     thread_init(idle, thread_idle, NULL, "idle",
-                stack, THREAD_STACK_MIN_SIZE);
+                stack, THREAD_STACK_MIN_SIZE, THREAD_IDLE_PRIORITY);
     return idle;
 }
 
 static void
 thread_runq_preinit(struct thread_runq *runq)
 {
-    thread_init(&thread_dummy, NULL, NULL, "dummy", NULL, 0);
+    thread_init(&thread_dummy, NULL, NULL, "dummy", NULL, 0, 0);
     runq->current = &thread_dummy;
 }
 
 static void
 thread_runq_init(struct thread_runq *runq)
 {
-    list_init(&runq->threads);
+    runq->nr_threads = 0;
+
+    for (size_t i = 0; i < ARRAY_SIZE(runq->lists); i++) {
+        thread_list_init(&runq->lists[i]);
+    }
+
     runq->idle = thread_create_idle();
 }
 

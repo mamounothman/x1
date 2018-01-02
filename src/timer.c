@@ -166,7 +166,7 @@ timer_setup(void)
     mutex_init(&timer_mutex);
 
     error = thread_create(&timer_thread, timer_run, NULL,
-                          "timer", TIMER_STACK_SIZE);
+                          "timer", TIMER_STACK_SIZE, THREAD_MAX_PRIORITY);
 
     if (error) {
         panic("timer: unable to create thread");

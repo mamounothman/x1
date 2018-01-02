@@ -1230,7 +1230,8 @@ shell_setup(void)
         }
     }
 
-    error = thread_create(NULL, shell_run, NULL, "shell", SHELL_STACK_SIZE);
+    error = thread_create(NULL, shell_run, NULL, "shell",
+                          SHELL_STACK_SIZE, THREAD_MIN_PRIORITY);
 
     if (error) {
         panic("shell: unable to create shell thread");

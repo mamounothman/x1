@@ -31,6 +31,13 @@
 
 #define THREAD_NAME_MAX_SIZE 16
 
+#define THREAD_STACK_MIN_SIZE 4096
+
+#define THREAD_NR_PRIORITIES    20
+#define THREAD_IDLE_PRIORITY    0
+#define THREAD_MIN_PRIORITY     1
+#define THREAD_MAX_PRIORITY     (THREAD_NR_PRIORITIES - 1)
+
 typedef void (*thread_fn_t)(void *arg);
 
 struct thread;
@@ -39,7 +46,7 @@ void thread_bootstrap(void);
 void thread_setup(void);
 
 int thread_create(struct thread **threadp, thread_fn_t fn, void *arg,
-                  const char *name, size_t stack_size);
+                  const char *name, size_t stack_size, unsigned int priority);
 void thread_exit(void) __attribute__((noreturn));
 void thread_join(struct thread *thread);
 
